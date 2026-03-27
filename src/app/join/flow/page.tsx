@@ -19,7 +19,9 @@ import {
   Printer, 
   CheckCircle2, 
   Share2,
-  Ticket
+  Ticket,
+  Clock,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,17 +30,39 @@ export default function JoinFlow() {
   const [method, setMethod] = useState<'kiosk' | 'qr'>('qr');
   const [details, setDetails] = useState({ name: '', phone: '' });
   const [category, setCategory] = useState('id');
+  const [issueTime, setIssueTime] = useState('');
+  const [estWait] = useState('1h 45m'); // Simulated wait time
+  
   const router = useRouter();
   const searchParams = useSearchParams();
   const branchName = searchParams.get('branch') || 'Home Affairs Bellville';
 
   const services = [
-    { id: 'id', title: 'Smart ID Card', icon: <Fingerprint />, desc: 'Application for first-time or replacement cards.' },
-    { id: 'passport', title: 'Passport Services', icon: <Globe />, desc: 'Renewals and new passport applications.' },
-    { id: 'birth', title: 'Birth Certificate', icon: <User />, desc: 'Registration and unabridged certificates.' },
+    { 
+      id: 'id', 
+      title: 'Smart ID Card', 
+      icon: <Fingerprint />, 
+      desc: 'Application for first-time or replacement cards.',
+      docs: ["Birth Certificate", "ID Photos", "R140 Fee (if replacement)"]
+    },
+    { 
+      id: 'passport', 
+      title: 'Passport Services', 
+      icon: <Globe />, 
+      desc: 'Renewals and new passport applications.',
+      docs: ["Old Passport", "ID Document", "R600 Fee"]
+    },
+    { 
+      id: 'birth', 
+      title: 'Birth Certificate', 
+      icon: <User />, 
+      desc: 'Registration and unabridged certificates.',
+      docs: ["Proof of Birth", "Parents' Identity Documents"]
+    },
   ];
 
   const handleFinish = () => {
+    setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     setStep(4);
   };
 
@@ -251,10 +275,41 @@ export default function JoinFlow() {
                    <div className="text-7xl font-headline font-extrabold text-foreground">B-090</div>
                 </div>
 
-                <div className="text-left text-sm space-y-2 border-t border-white/5 pt-4">
-                  <p className="text-muted-foreground">Branch: <strong className="text-foreground">{branchName}</strong></p>
-                  <p className="text-muted-foreground">Name: <strong className="text-foreground">{details.name}</strong></p>
-                  <p className="text-muted-foreground">Service: <strong className="text-foreground">{services.find(s => s.id === category)?.title}</strong></p>
+                <div className="text-left text-sm space-y-4 border-t border-white/5 pt-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
+                        <Clock className="h-3 w-3 mr-1" /> Issued
+                      </p>
+                      <p className="font-bold">{issueTime}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
+                        <Clock className="h-3 w-3 mr-1" /> Est. Wait
+                      </p>
+                      <p className="font-bold text-primary">{estWait}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground">Service Details</p>
+                    <p className="text-xs"><strong>Branch:</strong> {branchName}</p>
+                    <p className="text-xs"><strong>Type:</strong> {services.find(s => s.id === category)?.title}</p>
+                  </div>
+
+                  <div className="space-y-2 bg-muted/30 p-3 rounded-lg border border-white/5">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
+                      <FileText className="h-3 w-3 mr-1" /> Required Documents
+                    </p>
+                    <ul className="text-[10px] space-y-1 pl-1">
+                      {services.find(s => s.id === category)?.docs.map((doc, i) => (
+                        <li key={i} className="flex items-start">
+                          <span className="text-primary mr-1.5">•</span>
+                          <span className="text-foreground/80">{doc}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
 
                 {method === 'qr' && (
@@ -267,7 +322,7 @@ export default function JoinFlow() {
               <div className="flex flex-col gap-4">
                 <Button 
                   onClick={() => router.push(method === 'qr' ? '/queue/ticket-123' : '/')}
-                  className="h-14 w-full rounded-full bg-primary text-primary-foreground font-bold text-lg"
+                  className="h-14 w-full rounded-full bg-primary text-primary-foreground font-bold text-lg shadow-lg shadow-primary/20"
                 >
                   {method === 'qr' ? 'Track Live Position' : 'Return to Home'}
                 </Button>
