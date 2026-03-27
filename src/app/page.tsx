@@ -32,7 +32,7 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-screen w-full flex flex-col items-center justify-center text-center px-4 pt-20">
+      <section className="relative min-h-screen w-full flex flex-col items-center justify-center text-center px-4 pt-24">
         <div className="absolute inset-0 z-0">
           {heroImage?.imageUrl ? (
             <Image
@@ -60,7 +60,7 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button asChild size="lg" className="h-14 px-10 text-lg font-bold rounded-full bg-primary text-primary-foreground hover:scale-105 transition-all shadow-lg shadow-primary/20">
-              <Link href="/join">Join a Queue</Link>
+              <Link href="/join/flow">Join a Queue</Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="h-14 px-10 text-lg font-bold rounded-full border-foreground/30 hover:bg-foreground/5 transition-all">
               <Link href="/auth/signup">Sign Up</Link>
