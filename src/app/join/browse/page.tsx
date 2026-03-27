@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/navbar';
 import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 import { Search, MapPin, Clock, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
