@@ -34,13 +34,17 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative h-screen w-full flex flex-col items-center justify-center text-center px-4">
         <div className="absolute inset-0 z-0">
-          <Image
-            src={heroImage?.imageUrl || ''}
-            alt="South African Government Building"
-            fill
-            className="object-cover opacity-40 blur-[2px]"
-            priority
-          />
+          {heroImage?.imageUrl ? (
+            <Image
+              src={heroImage.imageUrl}
+              alt="South African Government Building"
+              fill
+              className="object-cover opacity-40 blur-[2px]"
+              priority
+            />
+          ) : (
+            <div className="absolute inset-0 bg-muted/20" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
         </div>
 
