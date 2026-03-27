@@ -67,7 +67,7 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  animation: loading-sweep 2.5s ease-in-out forwards;
+  animation: loading-sweep 1.2s ease-in-out forwards;
   transform-origin: left;
 }
 
