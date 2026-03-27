@@ -32,7 +32,7 @@ export default function Home() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative h-screen w-full flex flex-col items-center justify-center text-center px-4">
+      <section className="relative min-h-screen w-full flex flex-col items-center justify-center text-center px-4 pt-20">
         <div className="absolute inset-0 z-0">
           {heroImage?.imageUrl ? (
             <Image
