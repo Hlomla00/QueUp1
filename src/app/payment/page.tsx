@@ -71,7 +71,7 @@ export default function PaymentScreen() {
             </motion.div>
           )}
 
-          {step === 'details' && (
+          {step === 'details' && selectedBank && (
             <motion.div
               key="details"
               initial={{ opacity: 0, x: 20 }}

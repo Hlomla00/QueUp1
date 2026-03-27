@@ -34,10 +34,25 @@ export default function BranchDetail() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('live');
   const [currentTime, setCurrentTime] = useState('');
+  const [heatmapData, setHeatmapData] = useState<string[][]>([]);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
     const interval = setInterval(() => setCurrentTime(new Date().toLocaleTimeString()), 1000);
+    
+    // Generate random heatmap data on client side only to avoid hydration mismatch
+    const hours = ['08', '10', '12', '14'];
+    const days = [1, 2, 3, 4, 5];
+    const data = hours.map(() => 
+      days.map(() => {
+        const r = Math.random();
+        if (r > 0.7) return 'bg-red-500/40';
+        if (r > 0.4) return 'bg-yellow-500/40';
+        return 'bg-green-500/40';
+      })
+    );
+    setHeatmapData(data);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -63,7 +78,11 @@ export default function BranchDetail() {
               </div>
             </div>
             
-            <Button size="lg" className="h-14 px-8 rounded-full bg-primary text-primary-foreground font-bold text-lg hover:scale-105 transition-all shadow-xl shadow-primary/20">
+            <Button 
+              size="lg" 
+              className="h-14 px-8 rounded-full bg-primary text-primary-foreground font-bold text-lg hover:scale-105 transition-all shadow-xl shadow-primary/20"
+              onClick={() => router.push('/join/flow')}
+            >
               Join this queue
             </Button>
           </div>
@@ -189,13 +208,16 @@ export default function BranchDetail() {
                     <div className="grid grid-cols-6 gap-2">
                       <div className="h-10"></div>
                       {['M','T','W','T','F'].map(d => <div key={d} className="flex items-center justify-center text-xs font-bold">{d}</div>)}
-                      {['08','10','12','14'].map(h => (
+                      {['08','10','12','14'].map((h, hIdx) => (
                         <React.Fragment key={h}>
                           <div className="flex items-center text-[10px] text-muted-foreground font-bold">{h}:00</div>
-                          {[1,2,3,4,5].map(d => (
-                             <div key={d} className={`h-10 rounded-md ${
-                               Math.random() > 0.7 ? 'bg-red-500/40' : Math.random() > 0.4 ? 'bg-yellow-500/40' : 'bg-green-500/40'
-                             }`} />
+                          {[0,1,2,3,4].map(dIdx => (
+                             <div 
+                               key={dIdx} 
+                               className={`h-10 rounded-md transition-colors duration-1000 ${
+                                 heatmapData[hIdx]?.[dIdx] || 'bg-muted/10'
+                               }`} 
+                             />
                           ))}
                         </React.Fragment>
                       ))}
