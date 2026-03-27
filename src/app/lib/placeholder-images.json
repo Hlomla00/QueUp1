@@ -1,0 +1,29 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Blurred South African government building",
+      "imageUrl": "https://picsum.photos/seed/queup-hero/1920/1080",
+      "imageHint": "government building architecture"
+    },
+    {
+      "id": "dept-home-affairs",
+      "description": "Home Affairs Logo",
+      "imageUrl": "https://picsum.photos/seed/dept1/200/200",
+      "imageHint": "government logo"
+    },
+    {
+      "id": "dept-sassa",
+      "description": "SASSA Logo",
+      "imageUrl": "https://picsum.photos/seed/dept2/200/200",
+      "imageHint": "social services logo"
+    },
+    {
+      "id": "dept-sars",
+      "description": "SARS Logo",
+      "imageUrl": "https://picsum.photos/seed/dept3/200/200",
+      "imageHint": "tax logo"
+    }
+  ]
+}
