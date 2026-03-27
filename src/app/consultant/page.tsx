@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Users, 
   Clock, 
@@ -21,16 +22,8 @@ import {
   LogOut,
   Star
 } from 'lucide-react';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
 
-const queueTickets = [
+const INITIAL_QUEUE = [
   { id: '1', num: 'B-048', name: 'Sipho Mokoena', cat: 'Smart ID', wait: '2h 10m', channel: 'HOME', priority: false },
   { id: '2', num: 'P-001', name: 'Fatima Adams', cat: 'Passport', wait: '15m', channel: 'KIOSK', priority: true },
   { id: '3', num: 'B-049', name: 'Thandi Nkosi', cat: 'Smart ID', wait: '1h 55m', channel: 'QR', priority: false },
@@ -38,6 +31,8 @@ const queueTickets = [
 ];
 
 export default function ConsultantDashboard() {
+  const { toast } = useToast();
+  const [queue, setQueue] = useState(INITIAL_QUEUE);
   const [serving, setServing] = useState<any>({
     num: 'B-047',
     name: 'Nomsa Dlamini',
@@ -47,6 +42,49 @@ export default function ConsultantDashboard() {
     channel: 'HOME',
     priority: true
   });
+
+  const handleCallNext = () => {
+    if (queue.length === 0) {
+      toast({
+        title: "Queue Empty",
+        description: "There are no more citizens waiting in the queue.",
+      });
+      return;
+    }
+
+    const next = queue[0];
+    setServing({
+      num: next.num,
+      name: next.name,
+      id: '********',
+      cat: next.cat,
+      wait: next.wait,
+      channel: next.channel,
+      priority: next.priority
+    });
+    setQueue(prev => prev.slice(1));
+    
+    toast({
+      title: "Calling Ticket",
+      description: `Now calling ${next.num} to Counter 3.`,
+    });
+  };
+
+  const handleMarkServed = () => {
+    toast({
+      title: "Citizen Served",
+      description: `${serving.num} has been successfully assisted.`,
+    });
+    // For demo: call next automatically or wait for next button
+  };
+
+  const handleNoShow = () => {
+    toast({
+      variant: "destructive",
+      title: "No Show Logged",
+      description: `${serving.num} was not present at the counter.`,
+    });
+  };
 
   return (
     <main className="min-h-screen bg-background flex">
@@ -99,8 +137,8 @@ export default function ConsultantDashboard() {
         <div className="flex-1 p-8 space-y-8 overflow-y-auto">
            {/* Stats Row */}
            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <StatItem label="In Queue Now" value="47" />
-              <StatItem label="Serving Now" value="B-047" />
+              <StatItem label="In Queue Now" value={String(queue.length + 1)} />
+              <StatItem label="Serving Now" value={serving.num} />
               <StatItem label="Avg Wait Today" value="34m" />
            </div>
 
@@ -143,10 +181,10 @@ export default function ConsultantDashboard() {
                        </div>
 
                        <div className="flex flex-wrap gap-4 pt-4 border-t border-white/5">
-                          <Button size="lg" className="h-16 px-8 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl flex-1">
+                          <Button size="lg" className="h-16 px-8 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl flex-1" onClick={handleMarkServed}>
                              <CheckCircle2 className="mr-2" /> Mark as Served
                           </Button>
-                          <Button size="lg" className="h-16 px-8 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-2xl flex-1">
+                          <Button size="lg" className="h-16 px-8 bg-yellow-500 hover:bg-yellow-600 text-white font-bold rounded-2xl flex-1" onClick={handleNoShow}>
                              <UserMinus className="mr-2" /> No Show
                           </Button>
                           <Button size="lg" variant="outline" className="h-16 px-8 border-white/10 font-bold rounded-2xl flex-1">
@@ -156,7 +194,11 @@ export default function ConsultantDashboard() {
                     </div>
                  </Card>
 
-                 <Button size="lg" className="w-full h-20 text-3xl font-headline font-extrabold bg-primary text-primary-foreground rounded-3xl shadow-2xl shadow-primary/20">
+                 <Button 
+                   size="lg" 
+                   className="w-full h-20 text-3xl font-headline font-extrabold bg-primary text-primary-foreground rounded-3xl shadow-2xl shadow-primary/20"
+                   onClick={handleCallNext}
+                 >
                     CALL NEXT <Play className="ml-4 h-8 w-8 fill-current" />
                  </Button>
               </div>
@@ -173,7 +215,7 @@ export default function ConsultantDashboard() {
                     </div>
 
                     <div className="space-y-3 flex-1 overflow-y-auto max-h-[600px] pr-2 scrollbar-hide">
-                       {queueTickets.map(ticket => (
+                       {queue.map(ticket => (
                           <div key={ticket.id} className={`p-4 rounded-xl border border-white/5 bg-white/5 space-y-3 ${ticket.priority ? 'border-primary/50' : ''}`}>
                              <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">

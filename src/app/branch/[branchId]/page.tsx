@@ -16,6 +16,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { useToast } from '@/hooks/use-toast';
 
 const mockHistoricalData = [
   { time: '07:00', size: 5, avg: 10 },
@@ -32,6 +33,7 @@ const mockHistoricalData = [
 export default function BranchDetail() {
   const params = useParams();
   const router = useRouter();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('live');
   const [currentTime, setCurrentTime] = useState('');
   const [heatmapData, setHeatmapData] = useState<string[][]>([]);
@@ -59,6 +61,17 @@ export default function BranchDetail() {
   const branchName = "Home Affairs Bellville";
   const deptName = "Department of Home Affairs";
 
+  const handleJoinQueue = () => {
+    router.push('/join/flow');
+  };
+
+  const handleScheduleReminder = () => {
+    toast({
+      title: "Reminder Scheduled",
+      description: "We'll notify you when the queue size drops below 10 people.",
+    });
+  };
+
   return (
     <main className="min-h-screen bg-background pt-16">
       <Navbar />
@@ -81,7 +94,7 @@ export default function BranchDetail() {
             <Button 
               size="lg" 
               className="h-14 px-8 rounded-full bg-primary text-primary-foreground font-bold text-lg hover:scale-105 transition-all shadow-xl shadow-primary/20"
-              onClick={() => router.push('/join/flow')}
+              onClick={handleJoinQueue}
             >
               Join this queue
             </Button>
@@ -97,7 +110,7 @@ export default function BranchDetail() {
 
       {/* Content Tabs */}
       <section className="container mx-auto px-4 md:px-8 py-12">
-        <Tabs defaultValue="live" onValueChange={setActiveTab} className="space-y-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-card border border-white/5 p-1 h-14 rounded-full max-w-md">
             <TabsTrigger value="live" className="rounded-full h-full text-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Live Queue</TabsTrigger>
             <TabsTrigger value="analytics" className="rounded-full h-full text-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Analytics</TabsTrigger>
@@ -152,8 +165,8 @@ export default function BranchDetail() {
                     The queue is currently moving at a rate of approximately <strong>15 minutes per citizen</strong>. 
                     Lunch breaks start at 13:00, which may slow down serving times.
                   </p>
-                  <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10">
-                    Get Notify Settings
+                  <Button variant="outline" className="w-full rounded-full border-primary text-primary hover:bg-primary/10" onClick={() => setActiveTab('analytics')}>
+                    View Prediction Map
                   </Button>
                 </Card>
               </div>
@@ -198,7 +211,7 @@ export default function BranchDetail() {
                         <p className="text-foreground/80">Historically, <strong>Wednesday afternoons (14:00–15:00)</strong> are the quietest at this branch. We recommend visiting then to minimize wait time.</p>
                       </div>
                     </div>
-                    <Button className="w-full rounded-full bg-primary text-primary-foreground font-bold h-12">
+                    <Button className="w-full rounded-full bg-primary text-primary-foreground font-bold h-12" onClick={handleScheduleReminder}>
                       Schedule Reminder
                     </Button>
                   </Card>
@@ -262,7 +275,7 @@ function StatCard({ label, value, sub, status }: { label: string, value: string,
   }[status as any] || 'text-foreground';
 
   return (
-    <Card className="p-6 bg-card border-white/5 space-y-2">
+    <Card className="p-6 bg-card border-white/5 space-y-1">
       <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
       <div className={`text-4xl font-headline font-extrabold ${statusColor}`}>{value}</div>
       {sub && <p className="text-xs text-muted-foreground">{sub}</p>}

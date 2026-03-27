@@ -2,6 +2,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,19 +10,38 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Share2, MapPin, AlertTriangle, X, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 export default function QueueDashboard() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [position, setPosition] = useState(23);
   const [serving, setServing] = useState(47);
   const [showCallOverlay, setShowCallOverlay] = useState(false);
 
   useEffect(() => {
+    // For demo purposes, show the turn overlay after 5 seconds
     const timer = setTimeout(() => {
-      // Simulate ticket being called for demo after 10 seconds
-      // setShowCallOverlay(true);
-    }, 10000);
+       setShowCallOverlay(true);
+    }, 5000);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleLeaveQueue = () => {
+    toast({
+      variant: "destructive",
+      title: "Left Queue",
+      description: "You have been removed from the queue.",
+    });
+    router.push('/');
+  };
+
+  const handleSharePosition = () => {
+    toast({
+      title: "Link Copied",
+      description: "Shareable queue status link copied to clipboard.",
+    });
+  };
 
   return (
     <main className="min-h-screen bg-background pt-16 pb-24">
@@ -132,11 +152,11 @@ export default function QueueDashboard() {
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-4 pt-4">
-           <Button variant="outline" className="h-14 rounded-full border-white/10 hover:bg-white/5 space-x-2">
+           <Button variant="outline" className="h-14 rounded-full border-white/10 hover:bg-white/5 space-x-2" onClick={handleSharePosition}>
               <Share2 className="h-4 w-4" />
               <span>Share Position</span>
            </Button>
-           <Button variant="outline" className="h-14 rounded-full border-destructive/20 text-destructive hover:bg-destructive/10">
+           <Button variant="outline" className="h-14 rounded-full border-destructive/20 text-destructive hover:bg-destructive/10" onClick={handleLeaveQueue}>
               Leave Queue
            </Button>
         </div>

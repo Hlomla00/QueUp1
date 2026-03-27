@@ -1,0 +1,84 @@
+
+"use client"
+
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Navbar } from '@/components/navbar';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { motion } from 'framer-motion';
+import { useAuth } from '@/components/auth-provider';
+
+export default function SignupPage() {
+  const router = useRouter();
+  const { signIn } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    // Mock signup delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await signIn();
+    router.push('/join');
+  };
+
+  return (
+    <main className="min-h-screen bg-background pt-24 pb-12">
+      <Navbar />
+      <div className="container mx-auto px-4 flex justify-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md"
+        >
+          <Card className="p-8 border-white/5 bg-card space-y-8">
+            <div className="text-center space-y-2">
+              <h1 className="text-4xl font-headline font-extrabold">Join QueUp</h1>
+              <p className="text-muted-foreground">Stop waiting, start living.</p>
+            </div>
+
+            <form onSubmit={handleSignup} className="space-y-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input id="name" placeholder="Nomsa Dlamini" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="idNumber">ID Number</Label>
+                  <Input id="idNumber" placeholder="830112 5555 081" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input id="email" type="email" placeholder="nomsa@example.com" required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input id="password" type="password" placeholder="••••••••" required />
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox id="terms" required />
+                <Label htmlFor="terms" className="text-xs text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  I agree to the <span className="text-primary underline cursor-pointer">Terms of Service</span> and <span className="text-primary underline cursor-pointer">Privacy Policy</span>.
+                </Label>
+              </div>
+
+              <Button type="submit" className="w-full h-12 rounded-full font-bold text-lg" disabled={isLoading}>
+                {isLoading ? "Creating Account..." : "Create Account"}
+              </Button>
+            </form>
+
+            <div className="text-center text-sm text-muted-foreground">
+              Already have an account? <Button variant="link" className="p-0 h-auto" onClick={() => router.push('/auth/signin')}>Sign In</Button>
+            </div>
+          </Card>
+        </motion.div>
+      </div>
+    </main>
+  );
+}
