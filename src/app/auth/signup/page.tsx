@@ -22,7 +22,7 @@ export default function SignupPage() {
     setIsLoading(true);
     // Mock signup delay
     await new Promise(resolve => setTimeout(resolve, 1000));
-    await signIn();
+    await signIn('citizen');
     router.push('/join');
   };
 
@@ -48,6 +48,10 @@ export default function SignupPage() {
                   <Input id="name" placeholder="Nomsa Dlamini" required />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number (for SMS/WhatsApp)</Label>
+                  <Input id="phone" type="tel" placeholder="+27 81 234 5678" required />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="idNumber">ID Number</Label>
                   <Input id="idNumber" placeholder="830112 5555 081" required />
                 </div>
@@ -64,7 +68,7 @@ export default function SignupPage() {
               <div className="flex items-center space-x-2">
                 <Checkbox id="terms" required />
                 <Label htmlFor="terms" className="text-xs text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                  I agree to the <span className="text-primary underline cursor-pointer">Terms of Service</span> and <span className="text-primary underline cursor-pointer">Privacy Policy</span>.
+                  I agree to receive queue notifications via SMS/WhatsApp.
                 </Label>
               </div>
 

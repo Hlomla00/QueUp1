@@ -8,12 +8,13 @@ type UserProfile = {
   email: string | null;
   displayName: string | null;
   role: 'citizen' | 'consultant' | 'admin';
+  phone?: string;
 };
 
 type AuthContextType = {
   user: UserProfile | null;
   loading: boolean;
-  signIn: () => Promise<void>;
+  signIn: (role?: 'citizen' | 'consultant') => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -25,23 +26,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Simulated auth check
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    const storedUser = typeof window !== 'undefined' ? localStorage.getItem('queup_user') : null;
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setLoading(false);
   }, []);
 
-  const signIn = async () => {
-    setUser({
+  const signIn = async (role: 'citizen' | 'consultant' = 'citizen') => {
+    const mockUser: UserProfile = {
       uid: 'demo-user-123',
-      email: 'demo@user.co.za',
-      displayName: 'Nomsa Dlamini',
-      role: 'citizen',
-    });
+      email: role === 'consultant' ? 'staff@gov.za' : 'demo@user.co.za',
+      displayName: role === 'consultant' ? 'Sipho Nkosi' : 'Nomsa Dlamini',
+      role: role,
+      phone: '+27 81 234 5678',
+    };
+    setUser(mockUser);
+    localStorage.setItem('queup_user', JSON.stringify(mockUser));
   };
 
   const signOut = async () => {
     setUser(null);
+    localStorage.removeItem('queup_user');
   };
 
   return (

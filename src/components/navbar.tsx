@@ -3,10 +3,11 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useTheme } from '@/components/theme-provider';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Moon, Sun, Menu, User } from 'lucide-react';
+import { Moon, Sun, Menu, User, LayoutDashboard } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +17,8 @@ import {
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
-  const { user, signOut, signIn } = useAuth();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 h-16 border-b border-white/5 bg-background/80 backdrop-blur-md px-4 md:px-8 flex items-center justify-between">
@@ -43,11 +45,19 @@ export function Navbar() {
                 <span>{user.displayName}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem asChild>
-                <Link href="/queue/my-tickets">My Queue</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={signOut} className="text-destructive">
+            <DropdownMenuContent align="end" className="w-56">
+              {user.role === 'consultant' ? (
+                <DropdownMenuItem asChild>
+                  <Link href="/consultant" className="flex items-center">
+                    <LayoutDashboard className="h-4 w-4 mr-2" /> Consultant Dashboard
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link href="/queue/my-tickets">My Queue Status</Link>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem onClick={() => { signOut(); router.push('/'); }} className="text-destructive font-bold">
                 Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -56,7 +66,7 @@ export function Navbar() {
           <Button 
             variant="outline" 
             className="hidden md:flex border-foreground/20 hover:border-primary hover:text-primary rounded-full px-6"
-            onClick={signIn}
+            onClick={() => router.push('/auth/signin')}
           >
             Sign In
           </Button>

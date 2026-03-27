@@ -6,14 +6,22 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, User, Fingerprint, Smartphone, Printer, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Globe, User, Fingerprint, Smartphone, Printer, CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 
 export default function KioskView() {
   const [step, setStep] = useState(1);
-  const [details, setDetails] = useState({ name: '', surname: '', id: '', phone: '' });
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const nextStep = () => setStep(prev => prev + 1);
   const prevStep = () => setStep(prev => prev - 1);
+
+  const handleFinish = () => {
+    setIsPrinting(true);
+    setTimeout(() => {
+      setIsPrinting(false);
+      setStep(4);
+    }, 2500);
+  };
 
   return (
     <main className="fixed inset-0 bg-[#0A0A0A] flex flex-col overflow-hidden text-[#F5F2EE]">
@@ -67,7 +75,7 @@ export default function KioskView() {
              >
                 <div className="space-y-4 text-center">
                    <h2 className="text-5xl font-headline font-extrabold">Your Details</h2>
-                   <p className="text-2xl text-muted-foreground">Please enter your information using the keyboard below.</p>
+                   <p className="text-2xl text-muted-foreground">Please enter your information for the paper ticket.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-8">
@@ -111,18 +119,26 @@ export default function KioskView() {
                <h2 className="text-5xl font-headline font-extrabold text-center">Select Service</h2>
                <div className="grid grid-cols-2 gap-6">
                   {[
-                    { title: 'Smart ID Card', icon: <Fingerprint className="h-12 w-12" />, color: 'bg-primary/10 border-primary' },
-                    { title: 'Passport Services', icon: <Globe className="h-12 w-12" />, color: 'bg-card border-white/5' },
-                    { title: 'Birth Certificate', icon: <User className="h-12 w-12" />, color: 'bg-card border-white/5' },
-                    { title: 'Other Inquiries', icon: <Smartphone className="h-12 w-12" />, color: 'bg-card border-white/5' },
+                    { title: 'Smart ID Card', icon: <Fingerprint className="h-12 w-12" /> },
+                    { title: 'Passport Services', icon: <Globe className="h-12 w-12" /> },
+                    { title: 'Birth Certificate', icon: <User className="h-12 w-12" /> },
+                    { title: 'Other Inquiries', icon: <Smartphone className="h-12 w-12" /> },
                   ].map(service => (
-                    <Card key={service.title} className={`p-12 cursor-pointer hover:scale-102 transition-all flex flex-col items-center space-y-6 text-center ${service.color}`}>
+                    <Card key={service.title} onClick={handleFinish} className="p-12 cursor-pointer hover:bg-primary/5 hover:border-primary transition-all flex flex-col items-center space-y-6 text-center border-white/5">
                        <div className="p-6 bg-primary/20 rounded-full text-primary">{service.icon}</div>
                        <h3 className="text-3xl font-headline font-bold">{service.title}</h3>
-                       <Button variant="link" className="text-primary text-xl" onClick={nextStep}>Select Service</Button>
+                       <p className="text-primary font-bold">Touch to Print Ticket</p>
                     </Card>
                   ))}
                </div>
+               
+               {isPrinting && (
+                 <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center space-y-8">
+                    <Loader2 className="h-32 w-32 text-primary animate-spin" />
+                    <h2 className="text-5xl font-headline font-bold">Printing your ticket...</h2>
+                    <p className="text-2xl text-muted-foreground">Please wait a moment.</p>
+                 </div>
+               )}
             </motion.div>
           )}
 
@@ -139,30 +155,30 @@ export default function KioskView() {
                       className="absolute -top-4 -right-4 h-12 w-12 bg-green-500 rounded-full flex items-center justify-center"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ delay: 1 }}
+                      transition={{ delay: 0.5 }}
                    >
                       <CheckCircle2 className="h-8 w-8 text-white" />
                    </motion.div>
                 </div>
 
                 <div className="space-y-4">
-                   <h2 className="text-7xl font-headline font-extrabold">Ticket Issued!</h2>
-                   <p className="text-3xl text-muted-foreground">Please collect your ticket below.</p>
+                   <h2 className="text-7xl font-headline font-extrabold">Ticket Printed!</h2>
+                   <p className="text-3xl text-muted-foreground">Please collect your paper slip from the slot below.</p>
                 </div>
 
-                <Card className="max-w-md mx-auto p-12 bg-card border-white/20 space-y-8">
+                <Card className="max-w-md mx-auto p-12 bg-white text-black space-y-8 shadow-2xl">
                    <div className="space-y-2">
-                      <p className="text-xl font-bold uppercase tracking-widest text-primary">Your Number</p>
+                      <p className="text-xl font-bold uppercase tracking-widest text-primary">Ticket Number</p>
                       <div className="text-9xl font-headline font-extrabold leading-none">B-090</div>
                    </div>
-                   <div className="space-y-2 text-2xl text-muted-foreground font-bold">
-                      <p>Nomsa Dlamini</p>
-                      <p>Smart ID Application</p>
+                   <div className="space-y-2 text-2xl font-bold border-t border-black/10 pt-4">
+                      <p>Home Affairs Bellville</p>
+                      <p className="text-muted-foreground text-lg">Date: {new Date().toLocaleDateString()}</p>
                    </div>
                 </Card>
 
-                <p className="text-2xl text-muted-foreground">Returning to start in 10 seconds...</p>
-                <Button onClick={() => setStep(1)} size="lg" className="h-20 px-12 text-2xl rounded-full bg-white/5 hover:bg-white/10 border border-white/10">Return Home</Button>
+                <p className="text-2xl text-muted-foreground">Returning to start automatically...</p>
+                <Button onClick={() => setStep(1)} size="lg" className="h-20 px-12 text-2xl rounded-full bg-white/5 border border-white/10">Done</Button>
              </motion.div>
           )}
         </AnimatePresence>

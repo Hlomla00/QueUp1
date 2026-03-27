@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShieldCheck, Loader2, CheckCircle2 } from 'lucide-react';
+import { ShieldCheck, Loader2, CheckCircle2, Smartphone, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const banks = [
@@ -49,7 +49,7 @@ export default function PaymentScreen() {
             >
               <div className="text-center space-y-2">
                 <h1 className="text-3xl font-headline font-extrabold">Secure Queue Booking</h1>
-                <p className="text-muted-foreground">Select your payment method to confirm your spot — R65.00</p>
+                <p className="text-muted-foreground">Select payment method to receive your <span className="text-primary font-bold">Digital Ticket</span> via WhatsApp/SMS — R65.00</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -117,7 +117,7 @@ export default function PaymentScreen() {
               <Loader2 className="h-16 w-16 text-primary animate-spin mx-auto" />
               <div className="space-y-2">
                 <h2 className="text-2xl font-headline font-bold">Processing Secure Payment</h2>
-                <p className="text-muted-foreground">Please do not refresh or close this window...</p>
+                <p className="text-muted-foreground">Generating your encrypted digital ticket...</p>
               </div>
             </motion.div>
           )}
@@ -139,16 +139,21 @@ export default function PaymentScreen() {
               </div>
 
               <div className="space-y-2">
-                <h2 className="text-4xl font-headline font-extrabold">You&apos;re in!</h2>
-                <p className="text-xl text-muted-foreground">Your queue ticket has been issued.</p>
+                <h2 className="text-4xl font-headline font-extrabold">Digital Ticket Issued!</h2>
+                <p className="text-lg text-muted-foreground">We've sent your ticket to <span className="text-foreground font-bold">+27 81 234 5678</span> via WhatsApp.</p>
               </div>
 
-              <Card className="p-6 bg-card border-primary/20 space-y-6 max-w-sm mx-auto">
-                <div className="space-y-1">
-                  <p className="text-xs font-bold uppercase tracking-widest text-primary">Your Ticket Number</p>
-                  <div className="text-6xl font-headline font-extrabold">B-089</div>
+              <Card className="p-6 bg-card border-primary/20 space-y-6 max-w-sm mx-auto shadow-2xl">
+                <div className="flex justify-between items-start">
+                   <div className="text-left space-y-1">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Your Number</p>
+                      <div className="text-6xl font-headline font-extrabold">B-089</div>
+                   </div>
+                   <div className="p-2 bg-primary/10 rounded-lg">
+                      <Smartphone className="h-6 w-6 text-primary" />
+                   </div>
                 </div>
-                <div className="text-sm space-y-1 text-muted-foreground">
+                <div className="text-left text-sm space-y-1 text-muted-foreground">
                   <p>Branch: <strong>Home Affairs Bellville</strong></p>
                   <p>Category: <strong>Smart ID Application</strong></p>
                 </div>
@@ -163,11 +168,16 @@ export default function PaymentScreen() {
                   onClick={() => router.push('/queue/ticket-123')}
                   className="h-14 w-full rounded-full bg-primary text-primary-foreground font-bold text-lg"
                 >
-                  Track Live Dashboard
+                  Track Live on Phone
                 </Button>
-                <Button variant="outline" className="h-14 w-full rounded-full border-foreground/20">
-                  Save to Google Wallet
-                </Button>
+                <div className="grid grid-cols-2 gap-3">
+                   <Button variant="outline" className="h-12 rounded-full border-foreground/20">
+                    <Share2 className="h-4 w-4 mr-2" /> Share
+                   </Button>
+                   <Button variant="outline" className="h-12 rounded-full border-foreground/20">
+                    Save to Wallet
+                   </Button>
+                </div>
               </div>
             </motion.div>
           )}
