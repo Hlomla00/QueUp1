@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card } from '@/components/ui/card';
@@ -25,13 +25,13 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function JoinFlow() {
+function JoinFlowContent() {
   const [step, setStep] = useState(1);
   const [method, setMethod] = useState<'kiosk' | 'qr'>('qr');
   const [details, setDetails] = useState({ name: '', phone: '' });
   const [category, setCategory] = useState('id');
   const [issueTime, setIssueTime] = useState('');
-  const [estWait] = useState('1h 45m'); // Simulated wait time
+  const [estWait] = useState('1h 45m');
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -342,5 +342,13 @@ export default function JoinFlow() {
         </AnimatePresence>
       </div>
     </main>
+  );
+}
+
+export default function JoinFlow() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Loading queue details...</p></div>}>
+      <JoinFlowContent />
+    </Suspense>
   );
 }
