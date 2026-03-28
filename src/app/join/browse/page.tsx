@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -40,6 +41,8 @@ const BRANCH_DATA = [
 
 export default function BrowseBranches() {
   const [searchQuery, setSearchQuery] = useState('');
+  const searchParams = useSearchParams();
+  const source = searchParams.get('source');
 
   return (
     <main className="min-h-screen pt-20 pb-12 bg-background">
@@ -69,7 +72,7 @@ export default function BrowseBranches() {
             <div className="relative">
               <div className="flex space-x-4 overflow-x-auto pb-6 scrollbar-hide snap-x">
                 {row.branches.map((branch) => (
-                  <BranchCard key={branch.id} branch={branch} />
+                  <BranchCard key={branch.id} branch={branch} source={source} />
                 ))}
               </div>
             </div>
@@ -125,7 +128,7 @@ export default function BrowseBranches() {
   );
 }
 
-function BranchCard({ branch }: { branch: any }) {
+function BranchCard({ branch, source }: { branch: any, source: string | null }) {
   const congestionColor = {
     LOW: 'bg-green-500',
     MODERATE: 'bg-yellow-500',
@@ -133,7 +136,7 @@ function BranchCard({ branch }: { branch: any }) {
   }[branch.congestion as 'LOW' | 'MODERATE' | 'HIGH'];
 
   return (
-    <Link href={`/branch/${branch.id}`} className="flex-shrink-0 w-72 snap-start group">
+    <Link href={source ? `/branch/${branch.id}?source=${source}` : `/branch/${branch.id}`} className="flex-shrink-0 w-72 snap-start group">
       <Card className="h-full bg-card border-white/5 overflow-hidden group-hover:scale-[1.03] transition-all duration-300 relative">
         <div className="absolute top-0 left-0 right-0 h-1 bg-primary transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
         

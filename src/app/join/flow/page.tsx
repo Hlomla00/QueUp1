@@ -30,12 +30,13 @@ function JoinFlowContent() {
   const router = useRouter();
   const source = searchParams?.get('source');
   const branchName = searchParams?.get('branch') || 'Home Affairs Bellville';
+  const preselectedService = searchParams?.get('service') || 'id';
 
   const initialStep = source === 'signup' ? 3 : 1;
   const [step, setStep] = useState(initialStep);
   const [method, setMethod] = useState<'kiosk' | 'qr'>(source === 'signup' ? 'qr' : 'qr');
   const [details, setDetails] = useState({ name: 'Nomsa Dlamini', phone: '+27 81 234 5678' });
-  const [category, setCategory] = useState('id');
+  const [category, setCategory] = useState(preselectedService);
   const [issueTime, setIssueTime] = useState('');
   const [estWait] = useState('1h 45m');
 
@@ -65,7 +66,8 @@ function JoinFlowContent() {
 
   const handleFinish = () => {
     if (source === 'signup') {
-      router.push('/payment');
+      const paymentParams = new URLSearchParams({ source: 'signup', branch: branchName, service: category });
+      router.push(`/payment?${paymentParams.toString()}`);
     } else {
       setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setStep(4);
@@ -222,7 +224,7 @@ function JoinFlowContent() {
             <div className="flex gap-4">
               <Button variant="outline" className="h-14 flex-1 rounded-full font-bold" onClick={() => {
                 if (source === 'signup') {
-                   router.push('/');
+                   router.push('/join/browse?source=signup');
                 } else {
                    setStep(2);
                 }

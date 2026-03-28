@@ -3,6 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,9 @@ const provinces = [
 ];
 
 export default function ProvinceSelection() {
+  const searchParams = useSearchParams();
+  const source = searchParams.get('source');
+
   return (
     <main className="min-h-screen pt-24 pb-12 bg-background">
       <Navbar />
@@ -33,7 +37,7 @@ export default function ProvinceSelection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {provinces.map((province, i) => (
-            <ProvinceCard key={province.name} province={province} index={i} />
+            <ProvinceCard key={province.name} province={province} index={i} source={source} />
           ))}
         </div>
       </div>
@@ -41,7 +45,7 @@ export default function ProvinceSelection() {
   );
 }
 
-function ProvinceCard({ province, index }: { province: typeof provinces[0], index: number }) {
+function ProvinceCard({ province, index, source }: { province: typeof provinces[0], index: number, source: string | null }) {
   const content = (
     <Card className={`relative overflow-hidden group h-48 flex flex-col items-center justify-center p-8 transition-all duration-300 ${
       province.active 
@@ -76,7 +80,7 @@ function ProvinceCard({ province, index }: { province: typeof provinces[0], inde
       transition={{ delay: index * 0.05 }}
     >
       {province.active ? (
-        <Link href="/join/browse">
+        <Link href={source ? `/join/browse?source=${source}` : '/join/browse'}>
           {content}
         </Link>
       ) : (

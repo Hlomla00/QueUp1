@@ -20,14 +20,34 @@ import {
   History,
   Settings,
   LogOut,
-  Star
+   Star,
+   BarChart3
 } from 'lucide-react';
+import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 const INITIAL_QUEUE = [
   { id: '1', num: 'B-048', name: 'Sipho Mokoena', cat: 'Smart ID', wait: '2h 10m', channel: 'HOME', priority: false },
   { id: '2', num: 'P-001', name: 'Fatima Adams', cat: 'Passport', wait: '15m', channel: 'KIOSK', priority: true },
   { id: '3', num: 'B-049', name: 'Thandi Nkosi', cat: 'Smart ID', wait: '1h 55m', channel: 'QR', priority: false },
   { id: '4', num: 'B-050', name: 'Yusuf Jacobs', cat: 'Birth Cert', wait: '1h 40m', channel: 'KIOSK', priority: false },
+];
+
+const DIGITAL_CONGESTION_DATA = [
+   { time: '08:00', total: 12, qr: 7, home: 5 },
+   { time: '09:00', total: 21, qr: 12, home: 9 },
+   { time: '10:00', total: 33, qr: 19, home: 14 },
+   { time: '11:00', total: 41, qr: 24, home: 17 },
+   { time: '12:00', total: 38, qr: 22, home: 16 },
+   { time: '13:00', total: 29, qr: 16, home: 13 },
+   { time: '14:00', total: 24, qr: 13, home: 11 },
+   { time: '15:00', total: 18, qr: 10, home: 8 },
+];
+
+const DIGITAL_HEATMAP = [
+   ['bg-green-500/40', 'bg-yellow-500/40', 'bg-red-500/40', 'bg-red-500/40', 'bg-yellow-500/40'],
+   ['bg-green-500/40', 'bg-yellow-500/40', 'bg-yellow-500/40', 'bg-red-500/40', 'bg-yellow-500/40'],
+   ['bg-yellow-500/40', 'bg-red-500/40', 'bg-red-500/40', 'bg-yellow-500/40', 'bg-green-500/40'],
+   ['bg-green-500/40', 'bg-green-500/40', 'bg-yellow-500/40', 'bg-yellow-500/40', 'bg-green-500/40'],
 ];
 
 export default function ConsultantDashboard() {
@@ -42,6 +62,8 @@ export default function ConsultantDashboard() {
     channel: 'HOME',
     priority: true
   });
+
+   const digitalTicketsLive = [serving, ...queue].filter((t) => t.channel === 'QR' || t.channel === 'HOME').length;
 
   const handleCallNext = () => {
     if (queue.length === 0) {
@@ -89,7 +111,7 @@ export default function ConsultantDashboard() {
   return (
     <main className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-card border-r border-white/5 flex flex-col hidden lg:flex">
+      <aside className="w-64 bg-card border-r border-white/5 hidden lg:flex lg:flex-col">
         <div className="p-8">
            <div className="flex items-baseline space-x-0.5">
              <span className="text-2xl font-headline font-extrabold">Que</span>
@@ -141,6 +163,58 @@ export default function ConsultantDashboard() {
               <StatItem label="Serving Now" value={serving.num} />
               <StatItem label="Avg Wait Today" value="34m" />
            </div>
+
+                {/* Digital Tickets Analytics */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                     <Card className="p-6 bg-card border-white/5 space-y-4">
+                         <div className="flex items-center justify-between">
+                              <div>
+                                 <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Digital Tickets Dashboard</p>
+                                 <h3 className="text-2xl font-headline font-extrabold flex items-center"><BarChart3 className="h-5 w-5 mr-2 text-primary" />Congestion Trend</h3>
+                              </div>
+                              <Badge variant="outline" className="border-primary/30 text-primary">Live: {digitalTicketsLive}</Badge>
+                         </div>
+                         <div className="h-[240px] w-full">
+                              <ResponsiveContainer width="100%" height="100%">
+                                 <AreaChart data={DIGITAL_CONGESTION_DATA}>
+                                    <defs>
+                                       <linearGradient id="digitalCongestion" x1="0" y1="0" x2="0" y2="1">
+                                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.35}/>
+                                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                       </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.08)" />
+                                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                                    <YAxis axisLine={false} tickLine={false} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                                    <Area type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={3} fill="url(#digitalCongestion)" />
+                                 </AreaChart>
+                              </ResponsiveContainer>
+                         </div>
+                         <p className="text-xs text-muted-foreground">Includes all digital tickets from <strong>QR scan</strong> and <strong>home signup</strong> channels.</p>
+                     </Card>
+
+                     <Card className="p-6 bg-card border-white/5 space-y-4">
+                         <div>
+                              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Digital Heatmap</p>
+                              <h3 className="text-2xl font-headline font-extrabold">Weekly Congestion (QR + Home)</h3>
+                         </div>
+                         <div className="grid grid-cols-6 gap-2">
+                              <div className="h-8"></div>
+                              {['M', 'T', 'W', 'T', 'F'].map((d) => (
+                                 <div key={d} className="flex items-center justify-center text-xs font-bold">{d}</div>
+                              ))}
+                              {['08', '10', '12', '14'].map((h, hIdx) => (
+                                 <React.Fragment key={h}>
+                                    <div className="flex items-center text-[10px] text-muted-foreground font-bold">{h}:00</div>
+                                    {[0, 1, 2, 3, 4].map((dIdx) => (
+                                       <div key={`${h}-${dIdx}`} className={`h-8 rounded-md ${DIGITAL_HEATMAP[hIdx][dIdx]}`} />
+                                    ))}
+                                 </React.Fragment>
+                              ))}
+                         </div>
+                         <p className="text-[10px] text-muted-foreground">Color intensity indicates digital-ticket congestion level by hour/day.</p>
+                     </Card>
+                </div>
 
            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
               {/* Serving Panel */}
