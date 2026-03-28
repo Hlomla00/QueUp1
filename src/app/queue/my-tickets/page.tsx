@@ -21,7 +21,10 @@ export default function MyTickets() {
       service: 'Smart ID Application', 
       status: 'Active', 
       wait: '1h 45m', 
-      pos: '23rd' 
+      pos: '23rd',
+      date: new Date().toLocaleDateString(),
+      issueTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      docs: ['Birth Certificate', 'ID Photos', 'Proof of Residence'],
     }
   ];
 
@@ -75,6 +78,26 @@ export default function MyTickets() {
                       <div className="hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-white/5 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                         <ArrowRight className="h-6 w-6" />
                       </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 border-t border-white/5 pt-4 grid gap-3 text-xs">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <p className="font-bold uppercase tracking-widest text-muted-foreground">Date</p>
+                        <p className="font-semibold">{ticket.date}</p>
+                      </div>
+                      <div>
+                        <p className="font-bold uppercase tracking-widest text-muted-foreground">Issue Time</p>
+                        <p className="font-semibold">{ticket.issueTime}</p>
+                      </div>
+                      <div>
+                        <p className="font-bold uppercase tracking-widest text-muted-foreground">Estimated Time</p>
+                        <p className="font-semibold text-primary">{ticket.wait}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="font-bold uppercase tracking-widest text-muted-foreground">Documents Needed</p>
+                      <p className="text-foreground/80">{ticket.docs.join(', ')}</p>
                     </div>
                   </div>
                 </Card>

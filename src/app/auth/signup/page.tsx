@@ -23,8 +23,8 @@ export default function SignupPage() {
     // Mock signup delay
     await new Promise(resolve => setTimeout(resolve, 1000));
     await signIn('citizen');
-    // Redirect to join flow with a 'remote' source to trigger payment
-    router.push('/join/flow?source=signup');
+    // Start from province selection and preserve signup source through the queue flow.
+    router.push('/join?source=signup');
   };
 
   return (

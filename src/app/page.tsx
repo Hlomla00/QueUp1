@@ -10,17 +10,17 @@ import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const departments = [
-  { name: 'Home Affairs', icon: '🏛️' },
-  { name: 'SASSA', icon: '🤲' },
-  { name: 'SARS', icon: '💰' },
-  { name: 'Groote Schuur Hospital', icon: '🏥' },
-  { name: 'Tygerberg Hospital', icon: '🏥' },
-  { name: 'Mitchell\'s Plain Hospital', icon: '🏥' },
-  { name: 'Cape Town Magistrate Court', icon: '⚖️' },
-  { name: 'DLTC Milnerton', icon: '🚗' },
-  { name: 'DLTC Parow', icon: '🚗' },
-  { name: 'Cape Town Municipality', icon: '🏙️' },
-  { name: 'Dept of Labour', icon: '👷' },
+  { name: 'Home Affairs', image: '/images/home%20affairs.jpg' },
+  { name: 'SASSA', image: '/images/sassa.jpeg' },
+  { name: 'SARS', image: '/images/sars.jpg' },
+  { name: 'Groote Schuur Hospital', image: '/images/hospital.jpg' },
+  { name: 'Tygerberg Hospital', image: '/images/hospital.jpg' },
+  { name: 'Mitchell\'s Plain Hospital', image: '/images/hospital.jpg' },
+  { name: 'Cape Town Magistrate Court', image: '/images/court.jpg' },
+  { name: 'DLTC Milnerton', image: '/images/transport.jpeg' },
+  { name: 'DLTC Parow', image: '/images/transport.jpeg' },
+  { name: 'Cape Town Municipality', image: '/images/municipality.png' },
+  { name: 'Dept of Labour', image: '/images/labour.jpg' },
 ];
 
 export default function Home() {
@@ -80,10 +80,18 @@ export default function Home() {
             {departments.map((dept, i) => (
               <div 
                 key={i}
-                className="flex-shrink-0 w-48 h-64 bg-card rounded-xl border border-white/5 flex flex-col items-center justify-center p-6 text-center space-y-4 hover:scale-105 transition-transform snap-start cursor-pointer group hover:border-primary/50"
+                className="relative flex-shrink-0 w-48 h-64 bg-card rounded-xl border border-white/5 overflow-hidden hover:scale-105 transition-transform snap-start cursor-pointer group hover:border-primary/50"
               >
-                <div className="text-5xl group-hover:scale-110 transition-transform">{dept.icon}</div>
-                <h3 className="font-headline font-bold text-sm leading-tight text-foreground/90">{dept.name}</h3>
+                <Image
+                  src={dept.image}
+                  alt={dept.name}
+                  fill
+                  className="object-contain p-3 bg-white group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+                <h3 className="absolute bottom-4 left-4 right-4 font-headline font-bold text-sm leading-tight text-white text-left">
+                  {dept.name}
+                </h3>
                 <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             ))}

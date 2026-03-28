@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -30,9 +30,74 @@ const mockHistoricalData = [
   { time: '15:00', size: 20, avg: 22 },
 ];
 
+type BranchService = {
+  id: string;
+  title: string;
+  docs: string[];
+  time: string;
+  queue: string;
+};
+
+const BRANCH_NAME_BY_ID: Record<string, string> = {
+  'ha-bellville': 'Home Affairs Bellville',
+  'ha-wynberg': 'Home Affairs Wynberg',
+  'ha-cbd': 'Home Affairs Cape Town CBD',
+  'ha-mitchells': 'Home Affairs Mitchells Plain',
+  'ha-khayelitsha': 'Home Affairs Khayelitsha',
+  'sassa-bellville': 'SASSA Bellville',
+  'sassa-khayelitsha': 'SASSA Khayelitsha',
+  'sassa-mitchells': 'SASSA Mitchells Plain',
+  'hosp-groote': 'Groote Schuur Hospital',
+  'hosp-tyger': 'Tygerberg Hospital',
+  'hosp-redcross': "Red Cross Children's Hospital",
+};
+
+const DEPARTMENT_SERVICES: Record<string, BranchService[]> = {
+  'Department of Home Affairs': [
+    { id: 'id', title: 'Smart ID — New Application', docs: ['Birth Certificate', '2x Passport Photos', 'R140 Fee'], time: '20 mins', queue: '12 people' },
+    { id: 'passport', title: 'Passport Renewal', docs: ['Old Passport', 'ID Document', 'R600 Fee'], time: '15 mins', queue: '8 people' },
+    { id: 'birth', title: 'Birth Certificate', docs: ['Proof of Birth', "Parents' IDs", 'Application Form'], time: '30 mins', queue: '3 people' },
+  ],
+  'South African Social Security Agency (SASSA)': [
+    { id: 'grant-new', title: 'New Grant Application', docs: ['SA ID', 'Proof of Income', 'Proof of Residence'], time: '25 mins', queue: '18 people' },
+    { id: 'grant-status', title: 'Grant Status & Appeals', docs: ['Reference Number', 'SA ID'], time: '10 mins', queue: '9 people' },
+    { id: 'card-replace', title: 'SASSA Card Replacement', docs: ['Affidavit', 'SA ID', 'Old Card (if available)'], time: '15 mins', queue: '6 people' },
+  ],
+  'Public Health Services': [
+    { id: 'outpatient', title: 'Outpatient Registration', docs: ['Referral Letter', 'Clinic Card', 'SA ID'], time: '35 mins', queue: '24 people' },
+    { id: 'pharmacy', title: 'Pharmacy Collection', docs: ['Prescription', 'Clinic Card'], time: '12 mins', queue: '14 people' },
+    { id: 'records', title: 'Medical Records Request', docs: ['SA ID', 'Consent Form'], time: '20 mins', queue: '7 people' },
+  ],
+};
+
+function getBranchMeta(branchId: string) {
+  if (branchId.startsWith('sassa-')) {
+    return {
+      branchName: BRANCH_NAME_BY_ID[branchId] || 'SASSA Branch',
+      deptName: 'South African Social Security Agency (SASSA)',
+      services: DEPARTMENT_SERVICES['South African Social Security Agency (SASSA)'],
+    };
+  }
+
+  if (branchId.startsWith('hosp-')) {
+    return {
+      branchName: BRANCH_NAME_BY_ID[branchId] || 'Public Hospital Branch',
+      deptName: 'Public Health Services',
+      services: DEPARTMENT_SERVICES['Public Health Services'],
+    };
+  }
+
+  return {
+    branchName: BRANCH_NAME_BY_ID[branchId] || 'Home Affairs Bellville',
+    deptName: 'Department of Home Affairs',
+    services: DEPARTMENT_SERVICES['Department of Home Affairs'],
+  };
+}
+
 export default function BranchDetail() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('live');
   const [currentTime, setCurrentTime] = useState('');
@@ -58,11 +123,16 @@ export default function BranchDetail() {
     return () => clearInterval(interval);
   }, []);
 
-  const branchName = "Home Affairs Bellville";
-  const deptName = "Department of Home Affairs";
+  const branchId = String(params.branchId || 'ha-bellville');
+  const source = searchParams.get('source');
+  const { branchName, deptName, services } = getBranchMeta(branchId);
 
   const handleJoinQueue = () => {
-    router.push('/join/flow');
+    const flowParams = new URLSearchParams({ branch: branchName });
+    if (source) {
+      flowParams.set('source', source);
+    }
+    router.push(`/join/flow?${flowParams.toString()}`);
   };
 
   const handleScheduleReminder = () => {
@@ -242,24 +312,18 @@ export default function BranchDetail() {
           </TabsContent>
 
           <TabsContent value="services" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
-            <ServiceCard 
-              title="Smart ID — New Application" 
-              docs={["Birth Certificate", "2x Passport Photos", "R140 Fee"]}
-              time="20 mins"
-              queue="12 people"
-            />
-            <ServiceCard 
-              title="Passport Renewal" 
-              docs={["Old Passport", "ID Document", "R600 Fee"]}
-              time="15 mins"
-              queue="8 people"
-            />
-            <ServiceCard 
-              title="Death Certificate" 
-              docs={["Medical Report", "ID of deceased", "Application Form"]}
-              time="30 mins"
-              queue="3 people"
-            />
+            {services.map((service) => (
+              <ServiceCard
+                key={service.id}
+                id={service.id}
+                title={service.title}
+                docs={service.docs}
+                time={service.time}
+                queue={service.queue}
+                branchName={branchName}
+                source={source}
+              />
+            ))}
           </TabsContent>
         </Tabs>
       </section>
@@ -283,11 +347,19 @@ function StatCard({ label, value, sub, status }: { label: string, value: string,
   );
 }
 
-function ServiceCard({ title, docs, time, queue }: { title: string, docs: string[], time: string, queue: string }) {
+function ServiceCard({ id, title, docs, time, queue, branchName, source }: { id: string, title: string, docs: string[], time: string, queue: string, branchName: string, source: string | null }) {
   const router = useRouter();
+
+  const handleSelectService = () => {
+    const flowParams = new URLSearchParams({ branch: branchName, service: id });
+    if (source) {
+      flowParams.set('source', source);
+    }
+    router.push(`/join/flow?${flowParams.toString()}`);
+  };
   
   return (
-    <Card className="group p-6 bg-card border-white/5 hover:border-primary/50 transition-all flex flex-col cursor-pointer" onClick={() => router.push('/join/flow')}>
+    <Card className="group p-6 bg-card border-white/5 hover:border-primary/50 transition-all flex flex-col cursor-pointer" onClick={handleSelectService}>
       <div className="flex-1 space-y-4">
         <h3 className="text-xl font-headline font-bold group-hover:text-primary transition-colors">{title}</h3>
         <div className="space-y-2">

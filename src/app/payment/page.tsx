@@ -1,8 +1,8 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -10,25 +10,46 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ShieldCheck, Loader2, CheckCircle2, Smartphone, Clock, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const banks = [
-  { name: 'FNB', color: 'bg-[#00A191]', textColor: 'text-white', imageId: 'bank-fnb' },
-  { name: 'Standard Bank', color: 'bg-[#0033A1]', textColor: 'text-white', imageId: 'bank-standard' },
-  { name: 'Capitec', color: 'bg-[#E30613]', textColor: 'text-white', imageId: 'bank-capitec' },
-  { name: 'Absa', color: 'bg-[#FF0000]', textColor: 'text-white', imageId: 'bank-absa' },
-  { name: 'Nedbank', color: 'bg-[#006341]', textColor: 'text-white', imageId: 'bank-nedbank' },
+  { name: 'FNB', color: 'bg-[#00A191]', textColor: 'text-white', logo: '/images/fnb.jpeg' },
+  { name: 'Standard Bank', color: 'bg-[#0033A1]', textColor: 'text-white', logo: '/images/stbank.jpeg' },
+  { name: 'Capitec', color: 'bg-[#E30613]', textColor: 'text-white', logo: '/images/capitec.jpeg' },
+  { name: 'Absa', color: 'bg-[#FF0000]', textColor: 'text-white', logo: '/images/absa.jpeg' },
+  { name: 'Nedbank', color: 'bg-[#006341]', textColor: 'text-white', logo: '/images/nedbank.png' },
 ];
 
-export default function PaymentScreen() {
+function PaymentScreenContent() {
   const [step, setStep] = useState<'selection' | 'details' | 'processing' | 'success'>('selection');
   const [selectedBank, setSelectedBank] = useState<any>(null);
   const [issueTime, setIssueTime] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const source = searchParams.get('source');
+  const branchName = searchParams.get('branch') || 'Home Affairs Bellville';
+  const serviceId = searchParams.get('service') || 'id';
+
+  const serviceMeta: Record<string, { name: string; docs: string[] }> = {
+    id: { name: 'Smart ID Card', docs: ['Birth Certificate', 'ID Photos', 'Proof of Residence'] },
+    passport: { name: 'Passport Services', docs: ['Old Passport', 'ID Document', 'Passport Photos'] },
+    birth: { name: 'Birth Certificate', docs: ['Proof of Birth', "Parents' Identity Documents"] },
+    'grant-new': { name: 'New Grant Application', docs: ['SA ID', 'Proof of Income', 'Proof of Residence'] },
+    'grant-status': { name: 'Grant Status & Appeals', docs: ['Reference Number', 'SA ID'] },
+    'card-replace': { name: 'SASSA Card Replacement', docs: ['Affidavit', 'SA ID', 'Old Card (if available)'] },
+    outpatient: { name: 'Outpatient Registration', docs: ['Referral Letter', 'Clinic Card', 'SA ID'] },
+    pharmacy: { name: 'Pharmacy Collection', docs: ['Prescription', 'Clinic Card'] },
+    records: { name: 'Medical Records Request', docs: ['SA ID', 'Consent Form'] },
+  };
+
+  const selectedService = serviceMeta[serviceId] || serviceMeta.id;
 
   useEffect(() => {
+    if (source !== 'signup') {
+      router.replace('/auth/signup');
+      return;
+    }
     setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-  }, []);
+  }, [source, router]);
 
   const handleBankSelect = (bank: any) => {
     setSelectedBank(bank);
@@ -41,6 +62,10 @@ export default function PaymentScreen() {
       setStep('success');
     }, 2500);
   };
+
+  if (source !== 'signup') {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -60,30 +85,24 @@ export default function PaymentScreen() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {banks.map(bank => {
-                  const bankImg = PlaceHolderImages.find(img => img.id === bank.imageId);
-                  return (
-                    <button
-                      key={bank.name}
-                      onClick={() => handleBankSelect(bank)}
-                      className="group relative h-32 rounded-2xl overflow-hidden border border-white/5 bg-card hover:border-primary transition-all hover:scale-105 active:scale-95 shadow-lg"
-                    >
-                      {bankImg?.imageUrl && (
-                        <div className="relative w-full h-full bg-white">
-                          <Image 
-                            src={bankImg.imageUrl} 
-                            alt={bank.name} 
-                            fill 
-                            className="object-contain p-4 group-hover:scale-110 transition-transform"
-                          />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3 pointer-events-none">
-                        <span className="text-white font-bold text-xs">{bank.name}</span>
-                      </div>
-                    </button>
-                  );
-                })}
+                {banks.map(bank => (
+                  <button
+                    key={bank.name}
+                    onClick={() => handleBankSelect(bank)}
+                    className="group relative h-32 rounded-2xl overflow-hidden border border-white/5 bg-card hover:border-primary transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  >
+                    <div className="relative w-full h-full bg-white">
+                      <Image 
+                        src={bank.logo} 
+                        alt={bank.name} 
+                        fill 
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                    <span className="sr-only">{bank.name}</span>
+                  </button>
+                ))}
               </div>
               
               <div className="pt-4 flex items-center justify-center text-xs text-muted-foreground">
@@ -191,19 +210,23 @@ export default function PaymentScreen() {
                     </div>
                   </div>
 
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground">Service Details</p>
+                    <p className="text-xs"><strong>Branch:</strong> {branchName}</p>
+                    <p className="text-xs"><strong>Type:</strong> {selectedService.name}</p>
+                  </div>
+
                   <div className="space-y-2 bg-muted/30 p-3 rounded-lg border border-white/5">
                     <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
                       <FileText className="h-3 w-3 mr-1" /> Required Documents
                     </p>
                     <ul className="text-[10px] space-y-1 pl-1">
-                      <li className="flex items-start">
-                        <span className="text-primary mr-1.5">•</span>
-                        <span className="text-foreground/80">Birth Certificate</span>
-                      </li>
-                      <li className="flex items-start">
-                        <span className="text-primary mr-1.5">•</span>
-                        <span className="text-foreground/80">ID Photos</span>
-                      </li>
+                      {selectedService.docs.map((doc) => (
+                        <li key={doc} className="flex items-start">
+                          <span className="text-primary mr-1.5">•</span>
+                          <span className="text-foreground/80">{doc}</span>
+                        </li>
+                      ))}
                     </ul>
                   </div>
                 </div>
@@ -229,5 +252,22 @@ export default function PaymentScreen() {
         </AnimatePresence>
       </div>
     </main>
+  );
+}
+
+export default function PaymentScreen() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-background flex items-center justify-center p-4">
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="h-12 w-12 text-primary animate-spin" />
+            <p className="text-sm text-muted-foreground font-bold">Loading payment gateway...</p>
+          </div>
+        </main>
+      }
+    >
+      <PaymentScreenContent />
+    </Suspense>
   );
 }
