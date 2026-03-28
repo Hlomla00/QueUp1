@@ -70,6 +70,7 @@ export default function PaymentScreen() {
                         src={bank.logo} 
                         alt={bank.name} 
                         fill 
+                        unoptimized
                         className="object-cover"
                       />
                     </div>
