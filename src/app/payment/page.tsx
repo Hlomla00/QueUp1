@@ -1,8 +1,9 @@
 
 "use client"
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,20 +11,53 @@ import { Label } from '@/components/ui/label';
 import { ShieldCheck, Loader2, CheckCircle2, Smartphone, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+type Bank = {
+  name: string;
+  color: string;
+  textColor: string;
+  logo: string;
+};
+
 const banks = [
-  { name: 'FNB', color: 'bg-[#00A191]', textColor: 'text-white' },
-  { name: 'Standard Bank', color: 'bg-[#0033A1]', textColor: 'text-white' },
-  { name: 'Capitec', color: 'bg-[#E30613]', textColor: 'text-white' },
-  { name: 'Absa', color: 'bg-[#FF0000]', textColor: 'text-white' },
-  { name: 'Nedbank', color: 'bg-[#006341]', textColor: 'text-white' },
-];
+  { name: 'FNB', color: 'bg-[#00A191]', textColor: 'text-white', logo: '/images/fnb.jpeg' },
+  { name: 'Standard Bank', color: 'bg-[#0033A1]', textColor: 'text-white', logo: '/images/stbank.jpeg' },
+  { name: 'Capitec', color: 'bg-[#E30613]', textColor: 'text-white', logo: '/images/capitec.jpeg' },
+  { name: 'Absa', color: 'bg-[#FF0000]', textColor: 'text-white', logo: '/images/absa.jpeg' },
+  { name: 'Nedbank', color: 'bg-[#006341]', textColor: 'text-white', logo: '/images/nedbank.png' },
+] as const satisfies ReadonlyArray<Bank>;
 
 export default function PaymentScreen() {
   const [step, setStep] = useState<'selection' | 'details' | 'processing' | 'success'>('selection');
-  const [selectedBank, setSelectedBank] = useState<any>(null);
+  const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
+  const [issueTime, setIssueTime] = useState('');
+  const [issueDate, setIssueDate] = useState('');
+  const [estWait] = useState('1h 45m');
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const handleBankSelect = (bank: any) => {
+  const isSignupFlow = searchParams.get('signup') === '1';
+  const serviceId = searchParams.get('service') || 'id';
+  const branchName = searchParams.get('branch') || 'Home Affairs Bellville';
+
+  const serviceNames: Record<string, string> = {
+    id: 'Smart ID Card',
+    passport: 'Passport Services',
+    birth: 'Birth Certificate',
+  };
+
+  const serviceDocs: Record<string, string[]> = {
+    id: ['Birth Certificate', 'ID Photos', 'Proof of Residence'],
+    passport: ['Old Passport', 'ID Document', 'Passport Photos'],
+    birth: ['Proof of Birth', "Parents' Identity Documents", 'Clinic Card'],
+  };
+
+  useEffect(() => {
+    if (!isSignupFlow) {
+      router.replace('/auth/signup');
+    }
+  }, [isSignupFlow, router]);
+
+  const handleBankSelect = (bank: Bank) => {
     setSelectedBank(bank);
     setStep('details');
   };
@@ -31,9 +65,15 @@ export default function PaymentScreen() {
   const handlePayment = () => {
     setStep('processing');
     setTimeout(() => {
+      setIssueDate(new Date().toLocaleDateString());
+      setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setStep('success');
     }, 2500);
   };
+
+  if (!isSignupFlow) {
+    return null;
+  }
 
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -57,9 +97,16 @@ export default function PaymentScreen() {
                   <button
                     key={bank.name}
                     onClick={() => handleBankSelect(bank)}
-                    className={`h-20 rounded-xl p-4 flex items-center justify-center font-bold text-lg transition-transform hover:scale-105 active:scale-95 ${bank.color} ${bank.textColor}`}
+                    className={`relative h-20 rounded-xl overflow-hidden transition-transform hover:scale-105 active:scale-95 ${bank.color} ${bank.textColor}`}
                   >
-                    {bank.name}
+                    <Image
+                      src={bank.logo}
+                      alt={`${bank.name} logo`}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 220px"
+                      className="object-cover"
+                    />
+                    <span className="sr-only">{bank.name}</span>
                   </button>
                 ))}
               </div>
@@ -81,7 +128,16 @@ export default function PaymentScreen() {
             >
               <Card className={`p-0 overflow-hidden border-none`}>
                 <div className={`p-6 ${selectedBank.color} ${selectedBank.textColor} flex justify-between items-center`}>
-                  <h2 className="text-xl font-bold">{selectedBank.name} — Secure Gateway</h2>
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src={selectedBank.logo}
+                      alt={`${selectedBank.name} logo`}
+                      width={32}
+                      height={32}
+                      className="rounded-md bg-white/90 p-0.5 object-cover"
+                    />
+                    <h2 className="text-xl font-bold">{selectedBank.name} - Secure Gateway</h2>
+                  </div>
                   <div className="text-sm font-bold opacity-80">R65.00</div>
                 </div>
                 <div className="p-8 bg-card space-y-6">
@@ -154,8 +210,32 @@ export default function PaymentScreen() {
                    </div>
                 </div>
                 <div className="text-left text-sm space-y-1 text-muted-foreground">
-                  <p>Branch: <strong>Home Affairs Bellville</strong></p>
-                  <p>Category: <strong>Smart ID Application</strong></p>
+                  <p>Branch: <strong>{branchName}</strong></p>
+                  <p>Category: <strong>{serviceNames[serviceId] || 'Smart ID Card'}</strong></p>
+                </div>
+                <div className="text-left text-sm space-y-3 border-y border-white/5 py-4">
+                  <div className="grid grid-cols-3 gap-3 text-[11px]">
+                    <div>
+                      <p className="font-bold uppercase text-muted-foreground">Date</p>
+                      <p className="font-semibold">{issueDate}</p>
+                    </div>
+                    <div>
+                      <p className="font-bold uppercase text-muted-foreground">Issued</p>
+                      <p className="font-semibold">{issueTime}</p>
+                    </div>
+                    <div>
+                      <p className="font-bold uppercase text-muted-foreground">Est. Time</p>
+                      <p className="font-semibold text-primary">{estWait}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground">Required Documents</p>
+                    <ul className="text-[11px] space-y-1">
+                      {(serviceDocs[serviceId] || serviceDocs.id).map((doc) => (
+                        <li key={doc}>• {doc}</li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
                 <div className="aspect-square bg-white p-4 rounded-xl mx-auto w-48 flex items-center justify-center">
                    {/* Mock QR */}

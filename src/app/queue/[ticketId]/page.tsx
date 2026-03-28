@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Share2, MapPin, AlertTriangle, X, Info } from 'lucide-react';
+import { Bell, Share2, MapPin, AlertTriangle, X, Info, Clock, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,6 +18,10 @@ export default function QueueDashboard() {
   const [position, setPosition] = useState(23);
   const [serving, setServing] = useState(47);
   const [showCallOverlay, setShowCallOverlay] = useState(false);
+  const [issueDate] = useState(new Date().toLocaleDateString());
+  const [issueTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+  const [estTime] = useState('1h 45m');
+  const requiredDocs = ['Birth Certificate', 'ID Photos', 'Proof of Residence'];
 
   useEffect(() => {
     // For demo purposes, show the turn overlay after 5 seconds
@@ -71,6 +75,35 @@ export default function QueueDashboard() {
           <div className="space-y-1">
             <p className="text-xl font-headline font-bold">Nomsa Dlamini</p>
             <p className="text-sm text-muted-foreground">Home Affairs Bellville • Smart ID Application</p>
+          </div>
+
+          <div className="text-left text-sm space-y-3 border-t border-white/10 pt-4">
+            <div className="grid grid-cols-3 gap-3 text-[11px]">
+              <div>
+                <p className="font-bold uppercase text-muted-foreground">Date</p>
+                <p className="font-semibold">{issueDate}</p>
+              </div>
+              <div>
+                <p className="font-bold uppercase text-muted-foreground flex items-center">
+                  <Clock className="h-3 w-3 mr-1" /> Issued
+                </p>
+                <p className="font-semibold">{issueTime}</p>
+              </div>
+              <div>
+                <p className="font-bold uppercase text-muted-foreground">Est. Time</p>
+                <p className="font-semibold text-primary">{estTime}</p>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
+                <FileText className="h-3 w-3 mr-1" /> Required Documents
+              </p>
+              <ul className="text-[11px] space-y-1">
+                {requiredDocs.map((doc) => (
+                  <li key={doc}>• {doc}</li>
+                ))}
+              </ul>
+            </div>
           </div>
         </Card>
 

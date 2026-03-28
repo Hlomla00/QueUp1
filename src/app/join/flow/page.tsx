@@ -31,11 +31,13 @@ export default function JoinFlow() {
   const [details, setDetails] = useState({ name: '', phone: '' });
   const [category, setCategory] = useState('id');
   const [issueTime, setIssueTime] = useState('');
+  const [issueDate, setIssueDate] = useState('');
   const [estWait] = useState('1h 45m'); // Simulated wait time
   
   const router = useRouter();
   const searchParams = useSearchParams();
   const branchName = searchParams.get('branch') || 'Home Affairs Bellville';
+  const isSignupFlow = searchParams.get('signup') === '1';
 
   const services = [
     { 
@@ -62,7 +64,19 @@ export default function JoinFlow() {
   ];
 
   const handleFinish = () => {
+    if (isSignupFlow) {
+      const paymentParams = new URLSearchParams({
+        signup: '1',
+        home: '1',
+        branch: branchName,
+        service: category,
+      });
+      router.push(`/payment?${paymentParams.toString()}`);
+      return;
+    }
+
     setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    setIssueDate(new Date().toLocaleDateString());
     setStep(4);
   };
 
@@ -220,7 +234,7 @@ export default function JoinFlow() {
                   <ChevronLeft className="mr-2 h-5 w-5" /> Back
                 </Button>
                 <Button className="h-14 flex-[2] rounded-full font-bold text-lg" onClick={handleFinish}>
-                  Join Queue (Free)
+                  {isSignupFlow ? 'Continue to Payment (R65)' : 'Join Queue (Free)'}
                 </Button>
               </div>
             </motion.div>
@@ -276,7 +290,11 @@ export default function JoinFlow() {
                 </div>
 
                 <div className="text-left text-sm space-y-4 border-t border-white/5 pt-4">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground">Date</p>
+                      <p className="font-bold">{issueDate}</p>
+                    </div>
                     <div className="space-y-0.5">
                       <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
                         <Clock className="h-3 w-3 mr-1" /> Issued

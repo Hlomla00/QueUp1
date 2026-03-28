@@ -11,6 +11,10 @@ import { Globe, User, Fingerprint, Smartphone, Printer, CheckCircle2, ChevronRig
 export default function KioskView() {
   const [step, setStep] = useState(1);
   const [isPrinting, setIsPrinting] = useState(false);
+   const [issueDate, setIssueDate] = useState('');
+   const [issueTime, setIssueTime] = useState('');
+   const [estTime] = useState('1h 45m');
+   const requiredDocs = ['Birth Certificate', 'ID Photos', 'Proof of Residence'];
 
   const nextStep = () => setStep(prev => prev + 1);
   const prevStep = () => setStep(prev => prev - 1);
@@ -19,6 +23,8 @@ export default function KioskView() {
     setIsPrinting(true);
     setTimeout(() => {
       setIsPrinting(false);
+         setIssueDate(new Date().toLocaleDateString());
+         setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setStep(4);
     }, 2500);
   };
@@ -173,7 +179,15 @@ export default function KioskView() {
                    </div>
                    <div className="space-y-2 text-2xl font-bold border-t border-black/10 pt-4">
                       <p>Home Affairs Bellville</p>
-                      <p className="text-muted-foreground text-lg">Date: {new Date().toLocaleDateString()}</p>
+                   </div>
+                   <div className="space-y-2 border-t border-black/10 pt-4 text-left">
+                      <p className="text-muted-foreground text-lg">Date: {issueDate}</p>
+                      <p className="text-muted-foreground text-lg">Issue Time: {issueTime}</p>
+                      <p className="text-muted-foreground text-lg">Estimated Time: {estTime}</p>
+                      <div>
+                        <p className="text-sm font-bold uppercase tracking-widest text-primary">Documents Needed</p>
+                        <p className="text-sm text-muted-foreground">{requiredDocs.join(', ')}</p>
+                      </div>
                    </div>
                 </Card>
 
