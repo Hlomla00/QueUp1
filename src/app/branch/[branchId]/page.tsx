@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Button } from '@/components/ui/button';
@@ -94,7 +94,15 @@ function getBranchMeta(branchId: string) {
   };
 }
 
-export default function BranchDetail() {
+export default function BranchDetailPage() {
+  return (
+    <Suspense>
+      <BranchDetail />
+    </Suspense>
+  );
+}
+
+function BranchDetail() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
