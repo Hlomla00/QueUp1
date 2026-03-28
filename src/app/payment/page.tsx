@@ -68,7 +68,7 @@ export default function PaymentScreen() {
                       onClick={() => handleBankSelect(bank)}
                       className="group relative h-32 rounded-2xl overflow-hidden border border-white/5 bg-card hover:border-primary transition-all hover:scale-105 active:scale-95 shadow-lg"
                     >
-                      {bankImg && (
+                      {bankImg?.imageUrl && (
                         <div className="relative w-full h-full bg-white">
                           <Image 
                             src={bankImg.imageUrl} 

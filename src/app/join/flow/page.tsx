@@ -287,7 +287,7 @@ function JoinFlowContent() {
                     <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
                       <Clock className="h-3 w-3 mr-1" /> Issued
                     </p>
-                    <p className="font-bold">{issueTime}</p>
+                    <p className="font-bold">{issueTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
@@ -332,16 +332,6 @@ function JoinFlowContent() {
               >
                 {method === 'qr' ? 'Track Live Position' : 'Return to Home'}
               </Button>
-              {method === 'qr' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="h-12 rounded-full border-foreground/20">
-                    <Share2 className="h-4 w-4 mr-2" /> Share
-                  </Button>
-                  <Button variant="outline" className="h-12 rounded-full border-foreground/20" onClick={() => router.push('/')}>
-                    Done
-                  </Button>
-                </div>
-              )}
             </div>
           </motion.div>
         )}
