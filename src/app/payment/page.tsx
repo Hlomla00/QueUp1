@@ -10,14 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ShieldCheck, Loader2, CheckCircle2, Smartphone, Clock, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const banks = [
-  { name: 'FNB', color: 'bg-[#00A191]', textColor: 'text-white', imageId: 'bank-fnb' },
-  { name: 'Standard Bank', color: 'bg-[#0033A1]', textColor: 'text-white', imageId: 'bank-standard' },
-  { name: 'Capitec', color: 'bg-[#E30613]', textColor: 'text-white', imageId: 'bank-capitec' },
-  { name: 'Absa', color: 'bg-[#FF0000]', textColor: 'text-white', imageId: 'bank-absa' },
-  { name: 'Nedbank', color: 'bg-[#006341]', textColor: 'text-white', imageId: 'bank-nedbank' },
+  { name: 'FNB', color: 'bg-[#00A191]', textColor: 'text-white', logo: '/images/fnb.jpeg' },
+  { name: 'Standard Bank', color: 'bg-[#0033A1]', textColor: 'text-white', logo: '/images/stbank.jpeg' },
+  { name: 'Capitec', color: 'bg-[#E30613]', textColor: 'text-white', logo: '/images/capitec.jpeg' },
+  { name: 'Absa', color: 'bg-[#FF0000]', textColor: 'text-white', logo: '/images/absa.jpeg' },
+  { name: 'Nedbank', color: 'bg-[#006341]', textColor: 'text-white', logo: '/images/nedbank.png' },
 ];
 
 export default function PaymentScreen() {
@@ -60,30 +59,23 @@ export default function PaymentScreen() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {banks.map(bank => {
-                  const bankImg = PlaceHolderImages.find(img => img.id === bank.imageId);
-                  return (
-                    <button
-                      key={bank.name}
-                      onClick={() => handleBankSelect(bank)}
-                      className="group relative h-32 rounded-2xl overflow-hidden border border-white/5 bg-card hover:border-primary transition-all hover:scale-105 active:scale-95 shadow-lg"
-                    >
-                      {bankImg?.imageUrl && (
-                        <div className="relative w-full h-full bg-white">
-                          <Image 
-                            src={bankImg.imageUrl} 
-                            alt={bank.name} 
-                            fill 
-                            className="object-contain p-4 group-hover:scale-110 transition-transform"
-                          />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3 pointer-events-none">
-                        <span className="text-white font-bold text-xs">{bank.name}</span>
-                      </div>
-                    </button>
-                  );
-                })}
+                {banks.map(bank => (
+                  <button
+                    key={bank.name}
+                    onClick={() => handleBankSelect(bank)}
+                    className="group relative h-32 rounded-2xl overflow-hidden border border-white/5 bg-card hover:border-primary transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  >
+                    <div className="relative w-full h-full bg-white">
+                      <Image 
+                        src={bank.logo} 
+                        alt={bank.name} 
+                        fill 
+                        className="object-cover"
+                      />
+                    </div>
+                    <span className="sr-only">{bank.name}</span>
+                  </button>
+                ))}
               </div>
               
               <div className="pt-4 flex items-center justify-center text-xs text-muted-foreground">
