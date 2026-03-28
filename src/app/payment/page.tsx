@@ -1,14 +1,14 @@
 
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShieldCheck, Loader2, CheckCircle2, Smartphone, Share2 } from 'lucide-react';
+import { ShieldCheck, Loader2, CheckCircle2, Smartphone, Clock, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -23,7 +23,12 @@ const banks = [
 export default function PaymentScreen() {
   const [step, setStep] = useState<'selection' | 'details' | 'processing' | 'success'>('selection');
   const [selectedBank, setSelectedBank] = useState<any>(null);
+  const [issueTime, setIssueTime] = useState('');
   const router = useRouter();
+
+  useEffect(() => {
+    setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+  }, []);
 
   const handleBankSelect = (bank: any) => {
     setSelectedBank(bank);
@@ -69,10 +74,9 @@ export default function PaymentScreen() {
                           alt={bank.name} 
                           fill 
                           className="object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                          data-ai-hint={bankImg.imageHint}
                         />
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-3">
                         <span className="text-white font-bold text-sm">{bank.name}</span>
                       </div>
                     </button>
@@ -159,15 +163,50 @@ export default function PaymentScreen() {
                 <p className="text-lg text-muted-foreground">Digital ticket sent to <span className="text-primary font-bold">+27 81 234 5678</span>.</p>
               </div>
 
-              <Card className="p-8 bg-card border-primary/20 space-y-6 max-w-sm mx-auto shadow-2xl relative">
+              <Card className="p-8 bg-card border-primary/20 space-y-6 max-w-sm mx-auto shadow-2xl relative overflow-hidden">
                 <div className="absolute top-4 right-4 text-[10px] font-bold bg-primary text-primary-foreground px-2 py-1 rounded">
-                  SECURE
+                  SECURE DIGITAL
                 </div>
+                
                 <div className="text-left space-y-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Your Position</p>
                   <div className="text-7xl font-headline font-extrabold">B-089</div>
                 </div>
-                <div className="aspect-square bg-white p-4 rounded-xl mx-auto w-48 flex items-center justify-center">
+
+                <div className="text-left text-sm space-y-4 border-t border-white/5 pt-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
+                        <Clock className="h-3 w-3 mr-1" /> Issued
+                      </p>
+                      <p className="font-bold">{issueTime}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
+                        <Clock className="h-3 w-3 mr-1" /> Est. Wait
+                      </p>
+                      <p className="font-bold text-primary">1h 45m</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 bg-muted/30 p-3 rounded-lg border border-white/5">
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
+                      <FileText className="h-3 w-3 mr-1" /> Required Documents
+                    </p>
+                    <ul className="text-[10px] space-y-1 pl-1">
+                      <li className="flex items-start">
+                        <span className="text-primary mr-1.5">•</span>
+                        <span className="text-foreground/80">Birth Certificate</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="text-primary mr-1.5">•</span>
+                        <span className="text-foreground/80">ID Photos</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="aspect-square bg-white p-4 rounded-xl mx-auto w-40 flex items-center justify-center">
                    <div className="grid grid-cols-8 grid-rows-8 gap-0.5 w-full h-full bg-black opacity-10" />
                 </div>
               </Card>

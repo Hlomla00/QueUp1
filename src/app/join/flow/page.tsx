@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Card } from '@/components/ui/card';
@@ -25,18 +25,17 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/**
- * JoinFlowContent component handles the multi-step form logic.
- * It is isolated to properly handle useSearchParams() within a Suspense boundary.
- */
 function JoinFlowContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const source = searchParams?.get('source');
   const branchName = searchParams?.get('branch') || 'Home Affairs Bellville';
 
-  const [step, setStep] = useState(1);
-  const [method, setMethod] = useState<'kiosk' | 'qr'>('qr');
-  const [details, setDetails] = useState({ name: '', phone: '' });
+  // If source is signup, start at service selection (step 3)
+  const initialStep = source === 'signup' ? 3 : 1;
+  const [step, setStep] = useState(initialStep);
+  const [method, setMethod] = useState<'kiosk' | 'qr'>(source === 'signup' ? 'qr' : 'qr');
+  const [details, setDetails] = useState({ name: 'Nomsa Dlamini', phone: '+27 81 234 5678' });
   const [category, setCategory] = useState('id');
   const [issueTime, setIssueTime] = useState('');
   const [estWait] = useState('1h 45m');
@@ -66,8 +65,14 @@ function JoinFlowContent() {
   ];
 
   const handleFinish = () => {
-    setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-    setStep(4);
+    if (source === 'signup') {
+      // Convenience fee flow
+      router.push('/payment');
+    } else {
+      // Free walk-in flow
+      setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      setStep(4);
+    }
   };
 
   return (
@@ -218,11 +223,17 @@ function JoinFlowContent() {
             </RadioGroup>
 
             <div className="flex gap-4">
-              <Button variant="outline" className="h-14 flex-1 rounded-full font-bold" onClick={() => setStep(2)}>
+              <Button variant="outline" className="h-14 flex-1 rounded-full font-bold" onClick={() => {
+                if (source === 'signup') {
+                   router.push('/');
+                } else {
+                   setStep(2);
+                }
+              }}>
                 <ChevronLeft className="mr-2 h-5 w-5" /> Back
               </Button>
               <Button className="h-14 flex-[2] rounded-full font-bold text-lg" onClick={handleFinish}>
-                Join Queue (Free)
+                {source === 'signup' ? 'Proceed to Payment (R65)' : 'Join Queue (Free)'}
               </Button>
             </div>
           </motion.div>
@@ -346,10 +357,6 @@ function JoinFlowContent() {
   );
 }
 
-/**
- * Main JoinFlow page component.
- * It wraps the content in Suspense to handle search parameter usage in NextJS builds.
- */
 export default function JoinFlow() {
   return (
     <main className="min-h-screen bg-background pt-24 pb-12">
