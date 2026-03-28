@@ -41,6 +41,7 @@ export default function Home() {
               fill
               className="object-cover opacity-40 blur-[2px]"
               priority
+              sizes="100vw"
             />
           ) : (
             <div className="absolute inset-0 bg-muted/20" />
@@ -87,6 +88,7 @@ export default function Home() {
                   alt={dept.name}
                   fill
                   className="object-contain p-3 bg-white group-hover:scale-105 transition-transform duration-300"
+                  sizes="(max-width: 768px) 192px, 192px"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                 <h3 className="absolute bottom-4 left-4 right-4 font-headline font-bold text-sm leading-tight text-white text-left">
