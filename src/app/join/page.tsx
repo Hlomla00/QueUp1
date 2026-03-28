@@ -1,7 +1,7 @@
 
 "use client"
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
@@ -21,26 +21,37 @@ const provinces = [
   { name: 'Northern Cape', active: false, status: 'Coming Soon' },
 ];
 
-export default function ProvinceSelection() {
+function ProvinceSelectionContent() {
   const searchParams = useSearchParams();
   const source = searchParams.get('source');
 
   return (
+    <div className="container mx-auto px-4">
+      <header className="max-w-2xl mb-12 animate-in fade-in slide-in-from-left-4 duration-700">
+        <h1 className="text-5xl md:text-7xl font-headline font-extrabold mb-6">Where are you?</h1>
+        <p className="text-xl text-muted-foreground">Select your province to find nearby government branches and join a queue.</p>
+      </header>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {provinces.map((province, i) => (
+          <ProvinceCard key={province.name} province={province} index={i} source={source} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function ProvinceSelection() {
+  return (
     <main className="min-h-screen pt-24 pb-12 bg-background">
       <Navbar />
-      
-      <div className="container mx-auto px-4">
-        <header className="max-w-2xl mb-12 animate-in fade-in slide-in-from-left-4 duration-700">
-          <h1 className="text-5xl md:text-7xl font-headline font-extrabold mb-6">Where are you?</h1>
-          <p className="text-xl text-muted-foreground">Select your province to find nearby government branches and join a queue.</p>
-        </header>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {provinces.map((province, i) => (
-            <ProvinceCard key={province.name} province={province} index={i} source={source} />
-          ))}
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
         </div>
-      </div>
+      }>
+        <ProvinceSelectionContent />
+      </Suspense>
     </main>
   );
 }

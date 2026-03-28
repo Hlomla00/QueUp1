@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Button } from '@/components/ui/button';
@@ -94,7 +94,19 @@ function getBranchMeta(branchId: string) {
   };
 }
 
-export default function BranchDetail() {
+export default function BranchDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      </div>
+    }>
+      <BranchDetail />
+    </Suspense>
+  );
+}
+
+function BranchDetail() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
