@@ -96,7 +96,11 @@ function getBranchMeta(branchId: string) {
 
 export default function BranchDetailPage() {
   return (
-    <Suspense>
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      </div>
+    }>
       <BranchDetail />
     </Suspense>
   );

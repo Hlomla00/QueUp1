@@ -130,7 +130,11 @@ export default function BrowseBranches() {
   return (
     <main className="min-h-screen pt-20 pb-12 bg-background">
       <Navbar />
-      <Suspense>
+      <Suspense fallback={
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="h-10 w-10 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+        </div>
+      }>
         <BrowseBranchesContent />
       </Suspense>
     </main>
