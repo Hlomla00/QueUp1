@@ -14,16 +14,34 @@
       "imageHint": "government logo"
     },
     {
-      "id": "dept-sassa",
-      "description": "SASSA Logo",
-      "imageUrl": "https://picsum.photos/seed/dept2/200/200",
-      "imageHint": "social services logo"
+      "id": "bank-fnb",
+      "description": "FNB Logo",
+      "imageUrl": "https://picsum.photos/seed/fnb-logo/400/200",
+      "imageHint": "bank logo fnb"
     },
     {
-      "id": "dept-sars",
-      "description": "SARS Logo",
-      "imageUrl": "https://picsum.photos/seed/dept3/200/200",
-      "imageHint": "tax logo"
+      "id": "bank-standard",
+      "description": "Standard Bank Logo",
+      "imageUrl": "https://picsum.photos/seed/standardbank-logo/400/200",
+      "imageHint": "bank logo standard"
+    },
+    {
+      "id": "bank-capitec",
+      "description": "Capitec Logo",
+      "imageUrl": "https://picsum.photos/seed/capitec-logo/400/200",
+      "imageHint": "bank logo capitec"
+    },
+    {
+      "id": "bank-absa",
+      "description": "Absa Logo",
+      "imageUrl": "https://picsum.photos/seed/absa-logo/400/200",
+      "imageHint": "bank logo absa"
+    },
+    {
+      "id": "bank-nedbank",
+      "description": "Nedbank Logo",
+      "imageUrl": "https://picsum.photos/seed/nedbank-logo/400/200",
+      "imageHint": "bank logo nedbank"
     }
   ]
 }

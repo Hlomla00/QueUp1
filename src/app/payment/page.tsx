@@ -3,19 +3,21 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ShieldCheck, Loader2, CheckCircle2, Smartphone, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const banks = [
-  { name: 'FNB', color: 'bg-[#00A191]', textColor: 'text-white' },
-  { name: 'Standard Bank', color: 'bg-[#0033A1]', textColor: 'text-white' },
-  { name: 'Capitec', color: 'bg-[#E30613]', textColor: 'text-white' },
-  { name: 'Absa', color: 'bg-[#FF0000]', textColor: 'text-white' },
-  { name: 'Nedbank', color: 'bg-[#006341]', textColor: 'text-white' },
+  { name: 'FNB', color: 'bg-[#00A191]', textColor: 'text-white', imageId: 'bank-fnb' },
+  { name: 'Standard Bank', color: 'bg-[#0033A1]', textColor: 'text-white', imageId: 'bank-standard' },
+  { name: 'Capitec', color: 'bg-[#E30613]', textColor: 'text-white', imageId: 'bank-capitec' },
+  { name: 'Absa', color: 'bg-[#FF0000]', textColor: 'text-white', imageId: 'bank-absa' },
+  { name: 'Nedbank', color: 'bg-[#006341]', textColor: 'text-white', imageId: 'bank-nedbank' },
 ];
 
 export default function PaymentScreen() {
@@ -49,24 +51,38 @@ export default function PaymentScreen() {
             >
               <div className="text-center space-y-2">
                 <h1 className="text-3xl font-headline font-extrabold">Secure Queue Booking</h1>
-                <p className="text-muted-foreground">Select payment method to receive your <span className="text-primary font-bold">Digital Ticket</span> via WhatsApp/SMS — R65.00</p>
+                <p className="text-muted-foreground">Select your bank to receive your <span className="text-primary font-bold">Digital Ticket</span> — R65.00</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {banks.map(bank => (
-                  <button
-                    key={bank.name}
-                    onClick={() => handleBankSelect(bank)}
-                    className={`h-20 rounded-xl p-4 flex items-center justify-center font-bold text-lg transition-transform hover:scale-105 active:scale-95 ${bank.color} ${bank.textColor}`}
-                  >
-                    {bank.name}
-                  </button>
-                ))}
+                {banks.map(bank => {
+                  const bankImg = PlaceHolderImages.find(img => img.id === bank.imageId);
+                  return (
+                    <button
+                      key={bank.name}
+                      onClick={() => handleBankSelect(bank)}
+                      className="group relative h-28 rounded-2xl overflow-hidden border border-white/5 bg-card hover:border-primary transition-all hover:scale-105 active:scale-95 shadow-lg"
+                    >
+                      {bankImg && (
+                        <Image 
+                          src={bankImg.imageUrl} 
+                          alt={bank.name} 
+                          fill 
+                          className="object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                          data-ai-hint={bankImg.imageHint}
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                        <span className="text-white font-bold text-sm">{bank.name}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
               
               <div className="pt-4 flex items-center justify-center text-xs text-muted-foreground">
                 <ShieldCheck className="h-4 w-4 mr-1" />
-                PCI-DSS Compliant Secure Payment
+                PCI-DSS Compliant Secure Payment Gateway
               </div>
             </motion.div>
           )}
@@ -79,28 +95,28 @@ export default function PaymentScreen() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
-              <Card className={`p-0 overflow-hidden border-none`}>
+              <Card className="overflow-hidden border-none shadow-2xl">
                 <div className={`p-6 ${selectedBank.color} ${selectedBank.textColor} flex justify-between items-center`}>
-                  <h2 className="text-xl font-bold">{selectedBank.name} — Secure Gateway</h2>
+                  <h2 className="text-xl font-bold">{selectedBank.name} Portal</h2>
                   <div className="text-sm font-bold opacity-80">R65.00</div>
                 </div>
                 <div className="p-8 bg-card space-y-6">
                   <div className="space-y-2">
-                    <Label>Account Number / Cellphone Number</Label>
-                    <Input className="h-12" placeholder="e.g. 1234567890" defaultValue="1234567890" />
+                    <Label>Account / Phone Number</Label>
+                    <Input className="h-12 text-lg" placeholder="e.g. 1234567890" />
                   </div>
                   <div className="space-y-2">
-                    <Label>App PIN / Secret Code</Label>
-                    <Input className="h-12" type="password" placeholder="••••" />
+                    <Label>Secret PIN / Password</Label>
+                    <Input className="h-12 text-lg" type="password" placeholder="••••" />
                   </div>
                   <Button 
                     onClick={handlePayment} 
-                    className={`w-full h-14 text-lg font-bold rounded-full ${selectedBank.color} ${selectedBank.textColor}`}
+                    className={`w-full h-14 text-lg font-bold rounded-full ${selectedBank.color} ${selectedBank.textColor} shadow-lg`}
                   >
                     Authorize Payment
                   </Button>
-                  <Button variant="ghost" onClick={() => setStep('selection')} className="w-full">
-                    Cancel & Go Back
+                  <Button variant="ghost" onClick={() => setStep('selection')} className="w-full text-muted-foreground">
+                    Cancel and Return
                   </Button>
                 </div>
               </Card>
@@ -116,8 +132,8 @@ export default function PaymentScreen() {
             >
               <Loader2 className="h-16 w-16 text-primary animate-spin mx-auto" />
               <div className="space-y-2">
-                <h2 className="text-2xl font-headline font-bold">Processing Secure Payment</h2>
-                <p className="text-muted-foreground">Generating your encrypted digital ticket...</p>
+                <h2 className="text-2xl font-headline font-bold">Verifying Transaction</h2>
+                <p className="text-muted-foreground">We are communicating with {selectedBank?.name}...</p>
               </div>
             </motion.div>
           )}
@@ -139,26 +155,19 @@ export default function PaymentScreen() {
               </div>
 
               <div className="space-y-2">
-                <h2 className="text-4xl font-headline font-extrabold">Digital Ticket Issued!</h2>
-                <p className="text-lg text-muted-foreground">We've sent your ticket to <span className="text-foreground font-bold">+27 81 234 5678</span> via WhatsApp.</p>
+                <h2 className="text-4xl font-headline font-extrabold text-foreground">Payment Confirmed!</h2>
+                <p className="text-lg text-muted-foreground">Digital ticket sent to <span className="text-primary font-bold">+27 81 234 5678</span>.</p>
               </div>
 
-              <Card className="p-6 bg-card border-primary/20 space-y-6 max-w-sm mx-auto shadow-2xl">
-                <div className="flex justify-between items-start">
-                   <div className="text-left space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Your Number</p>
-                      <div className="text-6xl font-headline font-extrabold">B-089</div>
-                   </div>
-                   <div className="p-2 bg-primary/10 rounded-lg">
-                      <Smartphone className="h-6 w-6 text-primary" />
-                   </div>
+              <Card className="p-8 bg-card border-primary/20 space-y-6 max-w-sm mx-auto shadow-2xl relative">
+                <div className="absolute top-4 right-4 text-[10px] font-bold bg-primary text-primary-foreground px-2 py-1 rounded">
+                  SECURE
                 </div>
-                <div className="text-left text-sm space-y-1 text-muted-foreground">
-                  <p>Branch: <strong>Home Affairs Bellville</strong></p>
-                  <p>Category: <strong>Smart ID Application</strong></p>
+                <div className="text-left space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Your Position</p>
+                  <div className="text-7xl font-headline font-extrabold">B-089</div>
                 </div>
                 <div className="aspect-square bg-white p-4 rounded-xl mx-auto w-48 flex items-center justify-center">
-                   {/* Mock QR */}
                    <div className="grid grid-cols-8 grid-rows-8 gap-0.5 w-full h-full bg-black opacity-10" />
                 </div>
               </Card>
@@ -166,18 +175,13 @@ export default function PaymentScreen() {
               <div className="flex flex-col gap-4">
                 <Button 
                   onClick={() => router.push('/queue/ticket-123')}
-                  className="h-14 w-full rounded-full bg-primary text-primary-foreground font-bold text-lg"
+                  className="h-14 w-full rounded-full bg-primary text-primary-foreground font-bold text-lg shadow-xl shadow-primary/20"
                 >
-                  Track Live on Phone
+                  Track Live Position
                 </Button>
-                <div className="grid grid-cols-2 gap-3">
-                   <Button variant="outline" className="h-12 rounded-full border-foreground/20">
-                    <Share2 className="h-4 w-4 mr-2" /> Share
-                   </Button>
-                   <Button variant="outline" className="h-12 rounded-full border-foreground/20">
-                    Save to Wallet
-                   </Button>
-                </div>
+                <Button variant="outline" className="h-12 rounded-full border-white/10" onClick={() => router.push('/')}>
+                  Done
+                </Button>
               </div>
             </motion.div>
           )}

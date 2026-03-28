@@ -25,6 +25,10 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+/**
+ * JoinFlowContent component handles the multi-step form logic.
+ * It is isolated to properly handle useSearchParams() within a Suspense boundary.
+ */
 function JoinFlowContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -342,6 +346,10 @@ function JoinFlowContent() {
   );
 }
 
+/**
+ * Main JoinFlow page component.
+ * It wraps the content in Suspense to handle search parameter usage in NextJS builds.
+ */
 export default function JoinFlow() {
   return (
     <main className="min-h-screen bg-background pt-24 pb-12">
