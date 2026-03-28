@@ -66,18 +66,20 @@ export default function PaymentScreen() {
                     <button
                       key={bank.name}
                       onClick={() => handleBankSelect(bank)}
-                      className="group relative h-28 rounded-2xl overflow-hidden border border-white/5 bg-card hover:border-primary transition-all hover:scale-105 active:scale-95 shadow-lg"
+                      className="group relative h-32 rounded-2xl overflow-hidden border border-white/5 bg-card hover:border-primary transition-all hover:scale-105 active:scale-95 shadow-lg"
                     >
                       {bankImg && (
-                        <Image 
-                          src={bankImg.imageUrl} 
-                          alt={bank.name} 
-                          fill 
-                          className="object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                        />
+                        <div className="relative w-full h-full bg-white">
+                          <Image 
+                            src={bankImg.imageUrl} 
+                            alt={bank.name} 
+                            fill 
+                            className="object-contain p-4 group-hover:scale-110 transition-transform"
+                          />
+                        </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-3">
-                        <span className="text-white font-bold text-sm">{bank.name}</span>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3 pointer-events-none">
+                        <span className="text-white font-bold text-xs">{bank.name}</span>
                       </div>
                     </button>
                   );
@@ -163,17 +165,17 @@ export default function PaymentScreen() {
                 <p className="text-lg text-muted-foreground">Digital ticket sent to <span className="text-primary font-bold">+27 81 234 5678</span>.</p>
               </div>
 
-              <Card className="p-8 bg-card border-primary/20 space-y-6 max-w-sm mx-auto shadow-2xl relative overflow-hidden">
+              <Card className="p-8 bg-card border-primary/20 space-y-6 max-w-sm mx-auto shadow-2xl relative overflow-hidden text-left">
                 <div className="absolute top-4 right-4 text-[10px] font-bold bg-primary text-primary-foreground px-2 py-1 rounded">
                   SECURE DIGITAL
                 </div>
                 
-                <div className="text-left space-y-1">
+                <div className="space-y-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Your Position</p>
                   <div className="text-7xl font-headline font-extrabold">B-089</div>
                 </div>
 
-                <div className="text-left text-sm space-y-4 border-t border-white/5 pt-4">
+                <div className="text-sm space-y-4 border-t border-white/5 pt-4">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-0.5">
                       <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
@@ -206,7 +208,7 @@ export default function PaymentScreen() {
                   </div>
                 </div>
 
-                <div className="aspect-square bg-white p-4 rounded-xl mx-auto w-40 flex items-center justify-center">
+                <div className="aspect-square bg-white p-4 rounded-xl mx-auto w-40 flex items-center justify-center mt-4">
                    <div className="grid grid-cols-8 grid-rows-8 gap-0.5 w-full h-full bg-black opacity-10" />
                 </div>
               </Card>

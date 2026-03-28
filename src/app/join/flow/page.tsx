@@ -31,7 +31,6 @@ function JoinFlowContent() {
   const source = searchParams?.get('source');
   const branchName = searchParams?.get('branch') || 'Home Affairs Bellville';
 
-  // If source is signup, start at service selection (step 3)
   const initialStep = source === 'signup' ? 3 : 1;
   const [step, setStep] = useState(initialStep);
   const [method, setMethod] = useState<'kiosk' | 'qr'>(source === 'signup' ? 'qr' : 'qr');
@@ -66,10 +65,8 @@ function JoinFlowContent() {
 
   const handleFinish = () => {
     if (source === 'signup') {
-      // Convenience fee flow
       router.push('/payment');
     } else {
-      // Free walk-in flow
       setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setStep(4);
     }
@@ -274,21 +271,17 @@ function JoinFlowContent() {
               </p>
             </div>
 
-            <Card className="p-8 bg-card border-primary/20 space-y-6 max-w-sm mx-auto shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4">
-                 <div className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${
-                   method === 'qr' ? 'bg-primary text-primary-foreground' : 'bg-white/10 text-white'
-                 }`}>
-                   {method === 'qr' ? 'DIGITAL' : 'PHYSICAL'}
-                 </div>
+            <Card className="p-8 bg-card border-primary/20 space-y-6 max-w-sm mx-auto shadow-2xl relative overflow-hidden text-left">
+              <div className="absolute top-4 right-4 text-[10px] font-bold bg-primary text-primary-foreground px-2 py-1 rounded">
+                {method === 'qr' ? 'DIGITAL' : 'PHYSICAL'}
               </div>
               
-              <div className="text-left space-y-1">
-                 <p className="text-xs font-bold uppercase tracking-widest text-primary">Ticket Number</p>
+              <div className="space-y-1">
+                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Ticket Number</p>
                  <div className="text-7xl font-headline font-extrabold text-foreground">B-090</div>
               </div>
 
-              <div className="text-left text-sm space-y-4 border-t border-white/5 pt-4">
+              <div className="text-sm space-y-4 border-t border-white/5 pt-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-0.5">
                     <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
@@ -326,7 +319,7 @@ function JoinFlowContent() {
               </div>
 
               {method === 'qr' && (
-                <div className="aspect-square bg-white p-4 rounded-xl mx-auto w-40 flex items-center justify-center">
+                <div className="aspect-square bg-white p-4 rounded-xl mx-auto w-40 flex items-center justify-center mt-4">
                   <div className="grid grid-cols-8 grid-rows-8 gap-0.5 w-full h-full bg-black opacity-20" />
                 </div>
               )}
