@@ -26,16 +26,16 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 function JoinFlowContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const branchName = searchParams?.get('branch') || 'Home Affairs Bellville';
+
   const [step, setStep] = useState(1);
   const [method, setMethod] = useState<'kiosk' | 'qr'>('qr');
   const [details, setDetails] = useState({ name: '', phone: '' });
   const [category, setCategory] = useState('id');
   const [issueTime, setIssueTime] = useState('');
   const [estWait] = useState('1h 45m');
-  
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const branchName = searchParams?.get('branch') || 'Home Affairs Bellville';
 
   const services = [
     { 
