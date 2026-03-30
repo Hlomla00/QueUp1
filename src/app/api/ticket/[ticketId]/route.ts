@@ -8,6 +8,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTicket, updateTicketStatus, type TicketStatus } from '@/lib/firestore';
 import { z } from 'zod';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { sendWhatsAppMessage, MSG } from '@/lib/whatsapp';
 
 const PatchSchema = z.object({
   status: z.enum(['WAITING', 'CALLED', 'SERVED', 'NO_SHOW', 'CANCELLED']),
@@ -47,5 +50,34 @@ export async function PATCH(
   }
 
   await updateTicketStatus(ticketId, parsed.data.status as TicketStatus);
+
+  // Fire-and-forget: send WhatsApp notification for status changes
+  const newStatus = parsed.data.status;
+  if (newStatus === 'CALLED' || newStatus === 'SERVED' || newStatus === 'CANCELLED') {
+    sendWhatsAppNotification(ticketId, newStatus as TicketStatus).catch(console.error);
+  }
+
   return NextResponse.json({ ok: true });
+}
+
+async function sendWhatsAppNotification(ticketId: string, status: TicketStatus) {
+  // Find the WhatsApp session linked to this ticket
+  const q = query(
+    collection(db, 'whatsappSessions'),
+    where('ticketId', '==', ticketId),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return; // No WhatsApp session → nothing to send
+
+  const session = snap.docs[0].data();
+  const phone: string = session.phone;
+  const ticketNumber: string = session.ticketNumber ?? '';
+  const branchName: string  = session.branchName ?? '';
+
+  if (status === 'CALLED') {
+    await sendWhatsAppMessage(phone, MSG.yourTurn(ticketNumber, branchName));
+  } else if (status === 'CANCELLED') {
+    await sendWhatsAppMessage(phone, MSG.cancelled());
+  }
 }
