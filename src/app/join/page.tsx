@@ -1,7 +1,7 @@
 
 "use client"
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
@@ -21,7 +21,7 @@ const provinces = [
   { name: 'Northern Cape', active: false, status: 'Coming Soon' },
 ];
 
-export default function ProvinceSelection() {
+function ProvinceSelectionContent() {
   const searchParams = useSearchParams();
   const source = searchParams.get('source');
 
@@ -42,6 +42,23 @@ export default function ProvinceSelection() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function ProvinceSelection() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen pt-24 pb-12 bg-background">
+          <Navbar />
+          <div className="container mx-auto px-4 py-12 text-center text-muted-foreground font-bold">
+            Loading provinces...
+          </div>
+        </main>
+      }
+    >
+      <ProvinceSelectionContent />
+    </Suspense>
   );
 }
 

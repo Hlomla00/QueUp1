@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
@@ -39,7 +39,7 @@ const BRANCH_DATA = [
   }
 ];
 
-export default function BrowseBranches() {
+function BrowseBranchesContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const searchParams = useSearchParams();
   const source = searchParams.get('source');
@@ -125,6 +125,23 @@ export default function BrowseBranches() {
         </section>
       </div>
     </main>
+  );
+}
+
+export default function BrowseBranches() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen pt-20 pb-12 bg-background">
+          <Navbar />
+          <div className="px-4 md:px-8 py-12 text-center text-muted-foreground font-bold">
+            Loading branches...
+          </div>
+        </main>
+      }
+    >
+      <BrowseBranchesContent />
+    </Suspense>
   );
 }
 

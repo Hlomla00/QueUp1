@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Navbar } from '@/components/navbar';
 import { Button } from '@/components/ui/button';
@@ -94,7 +94,7 @@ function getBranchMeta(branchId: string) {
   };
 }
 
-export default function BranchDetail() {
+function BranchDetailContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -328,6 +328,23 @@ export default function BranchDetail() {
         </Tabs>
       </section>
     </main>
+  );
+}
+
+export default function BranchDetail() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-background pt-16">
+          <Navbar />
+          <div className="container mx-auto px-4 md:px-8 py-12 text-center text-muted-foreground font-bold">
+            Loading branch details...
+          </div>
+        </main>
+      }
+    >
+      <BranchDetailContent />
+    </Suspense>
   );
 }
 
