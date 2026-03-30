@@ -291,12 +291,14 @@ function JoinFlowContent() {
               <p className="text-muted-foreground">What service do you require at {branchName}?</p>
             </div>
 
-            {submitError && (
-              <div className="flex items-center gap-2 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                {submitError}
-              </div>
-            )}
+            <div className="min-h-[56px]">
+              {submitError && (
+                <div className="flex items-center gap-2 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  {submitError}
+                </div>
+              )}
+            </div>
 
             <RadioGroup value={category} onValueChange={setCategory} className="grid gap-4">
               {services.map((service) => (
