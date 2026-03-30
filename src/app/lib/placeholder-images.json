@@ -16,31 +16,31 @@
     {
       "id": "bank-fnb",
       "description": "FNB Logo",
-      "imageUrl": "/fnb.png",
+      "imageUrl": "/images/fnb.jpeg",
       "imageHint": "bank logo fnb"
     },
     {
       "id": "bank-standard",
       "description": "Standard Bank Logo",
-      "imageUrl": "/standard-bank.png",
+      "imageUrl": "/images/stbank.jpeg",
       "imageHint": "bank logo standard"
     },
     {
       "id": "bank-capitec",
       "description": "Capitec Logo",
-      "imageUrl": "/capitec.png",
+      "imageUrl": "/images/capitec.jpeg",
       "imageHint": "bank logo capitec"
     },
     {
       "id": "bank-absa",
       "description": "Absa Logo",
-      "imageUrl": "/absa.png",
+      "imageUrl": "/images/absa.jpeg",
       "imageHint": "bank logo absa"
     },
     {
       "id": "bank-nedbank",
       "description": "Nedbank Logo",
-      "imageUrl": "/nedbank.png",
+      "imageUrl": "/images/nedbank.png",
       "imageHint": "bank logo nedbank"
     }
   ]
