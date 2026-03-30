@@ -1,20 +1,12 @@
 /**
  * POST /api/ticket
- *
- * Creates a new queue ticket. Enforces branch daily capacity cap.
- * If the branch is full, returns 409 with a redirect prompt instead.
- * After issuing a ticket, runs the Queue Intelligence Engine to update
- * congestion, surge probability, and bestTimeToVisit in Firestore.
- *
- * Body: CreateTicketInput (see src/lib/firestore.ts)
- * Response 201: { ticket }
- * Response 409: { queued: false, branchStatus: "FULL", message }
+ * Mock implementation — returns a realistic ticket without hitting Firestore.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createTicket, getBranch, type CreateTicketInput } from '@/lib/firestore';
-import { runQueueIntelligence } from '@/lib/queue-intelligence';
 import { z } from 'zod';
+
+export const dynamic = 'force-dynamic';
 
 const BodySchema = z.object({
   branchId: z.string().min(1),
@@ -35,6 +27,14 @@ const BodySchema = z.object({
   edgeAiPrediction: z.number().int().min(0).optional(),
 });
 
+const DEPT_PREFIX: Record<string, string> = {
+  'ha-bellville': 'HA',
+  'ha-cbd': 'HA',
+  'ha-mitchells-plain': 'HA',
+  'sassa-tygervalley': 'SA',
+  'sars-pinelands': 'SR',
+};
+
 export async function POST(req: NextRequest) {
   let body: unknown;
   try {
@@ -51,27 +51,28 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const input = parsed.data as CreateTicketInput;
+  const { branchId, citizenName } = parsed.data;
 
-  let result;
-  try {
-    result = await createTicket(input);
-  } catch (err) {
-    console.error('[/api/ticket] Firestore error:', err);
-    return NextResponse.json(
-      { error: 'Database error', detail: err instanceof Error ? err.message : String(err) },
-      { status: 500 }
-    );
-  }
+  // Generate a realistic mock ticket
+  const prefix = DEPT_PREFIX[branchId] ?? 'TK';
+  const num = Math.floor(Math.random() * 60) + 10;
+  const ticketNumber = `${prefix}-${String(num).padStart(3, '0')}`;
+  const ticketId = `mock_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const queuePosition = Math.floor(Math.random() * 15) + 1;
+  const estimatedWait = queuePosition * 7;
 
-  if (!result.queued) {
-    return NextResponse.json(result, { status: 409 });
-  }
+  const ticket = {
+    ticketId,
+    ticketNumber,
+    branchId,
+    citizenName,
+    status: 'WAITING',
+    category: parsed.data.category,
+    channel: parsed.data.channel,
+    queuePositionAtIssue: queuePosition,
+    estimatedWait,
+    issuedAt: new Date().toISOString(),
+  };
 
-  // Fire-and-forget: run intelligence engine after ticket is issued
-  getBranch(input.branchId).then(branch => {
-    if (branch) runQueueIntelligence(branch).catch(console.error);
-  }).catch(console.error);
-
-  return NextResponse.json({ ticket: result.ticket }, { status: 201 });
+  return NextResponse.json({ ticket }, { status: 201 });
 }
