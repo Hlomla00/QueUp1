@@ -33,6 +33,7 @@ export function Navbar() {
           size="icon"
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className="rounded-full"
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
         >
           {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
@@ -72,7 +73,7 @@ export function Navbar() {
           </Button>
         )}
 
-        <Button variant="ghost" size="icon" className="md:hidden">
+        <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu">
           <Menu className="h-6 w-6" />
         </Button>
       </div>
