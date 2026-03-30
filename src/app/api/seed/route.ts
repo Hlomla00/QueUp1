@@ -8,6 +8,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
+export const dynamic = 'force-dynamic';
+
 const BRANCHES = [
   {
     id: 'ha-bellville',
