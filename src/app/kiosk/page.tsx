@@ -175,12 +175,14 @@ export default function KioskView() {
                    <p className="text-2xl text-muted-foreground">Please enter your first name for the paper ticket.</p>
                 </div>
 
-                {submitError && (
-                  <div className="flex items-center gap-3 p-4 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xl font-bold">
-                    <AlertTriangle className="h-6 w-6 shrink-0" />
-                    {submitError}
-                  </div>
-                )}
+                <div className="min-h-[72px]">
+                  {submitError && (
+                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-950/60 border border-red-800/50 text-red-400 text-xl font-bold">
+                      <AlertTriangle className="h-6 w-6 shrink-0" />
+                      {submitError}
+                    </div>
+                  )}
+                </div>
 
                 <div className="space-y-4">
                    <label className="text-xl font-bold uppercase tracking-widest text-primary">First Name</label>

@@ -42,6 +42,8 @@ import {
 } from '@/lib/firestore';
 import { generateQueuePaymentUrl } from '@/lib/payfast';
 
+export const dynamic = 'force-dynamic';
+
 // ─── Location groupings (matches seeded branches) ────────────────────────────
 
 const LOCATION_GROUPS: Record<string, string[]> = {

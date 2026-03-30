@@ -53,7 +53,16 @@ export async function POST(req: NextRequest) {
 
   const input = parsed.data as CreateTicketInput;
 
-  const result = await createTicket(input);
+  let result;
+  try {
+    result = await createTicket(input);
+  } catch (err) {
+    console.error('[/api/ticket] Firestore error:', err);
+    return NextResponse.json(
+      { error: 'Database error', detail: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
+  }
 
   if (!result.queued) {
     return NextResponse.json(result, { status: 409 });
@@ -62,7 +71,7 @@ export async function POST(req: NextRequest) {
   // Fire-and-forget: run intelligence engine after ticket is issued
   getBranch(input.branchId).then(branch => {
     if (branch) runQueueIntelligence(branch).catch(console.error);
-  });
+  }).catch(console.error);
 
   return NextResponse.json({ ticket: result.ticket }, { status: 201 });
 }
