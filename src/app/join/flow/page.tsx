@@ -291,12 +291,14 @@ function JoinFlowContent() {
               <p className="text-muted-foreground">What service do you require at {branchName}?</p>
             </div>
 
-            {submitError && (
-              <div className="flex items-center gap-2 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                {submitError}
-              </div>
-            )}
+            <div className="min-h-[56px]">
+              {submitError && (
+                <div className="flex items-center gap-2 p-4 rounded-xl bg-red-950/60 border border-red-800/50 text-red-400 text-sm font-medium">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  {submitError}
+                </div>
+              )}
+            </div>
 
             <RadioGroup value={category} onValueChange={setCategory} className="grid gap-4">
               {services.map((service) => (
@@ -307,7 +309,7 @@ function JoinFlowContent() {
                     category === service.id ? 'border-primary bg-primary/5' : 'border-white/5 bg-card hover:border-white/20'
                   }`}
                 >
-                  <RadioGroupItem value={service.id} id={service.id} className="sr-only" />
+                  <RadioGroupItem value={service.id} id={service.id} className="sr-only" aria-label={service.title} />
                   <div className={`p-3 rounded-xl transition-colors ${
                     category === service.id ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
                   }`}>

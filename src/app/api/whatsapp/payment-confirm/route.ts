@@ -28,6 +28,8 @@ import { createTicket } from '@/lib/firestore';
 import { updateSession } from '@/lib/whatsapp-session';
 import { sendWhatsAppMessage, MSG } from '@/lib/whatsapp';
 
+export const dynamic = 'force-dynamic';
+
 // ─── PayFast IPN validation ───────────────────────────────────────────────────
 
 function validatePayFastIPN(params: Record<string, string>): boolean {
