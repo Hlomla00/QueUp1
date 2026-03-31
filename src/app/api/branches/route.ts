@@ -1,8 +1,8 @@
 /**
  * GET /api/branches
- * Mock implementation — returns hardcoded branch data without Firestore.
+ * Mock implementation — returns hardcoded branch data.
+ * Supports filtering by ?city= and ?department= and ?onlyOpen=true
  */
-
 import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +15,8 @@ const MOCK_BRANCHES = [
     city: 'Cape Town',
     province: 'Western Cape',
     department: 'HA',
-    lat: -33.9000, lng: 18.6294,
+    lat: -33.9,
+    lng: 18.6294,
     currentQueue: 12,
     estimatedWait: 84,
     congestionLevel: 'MODERATE',
@@ -32,7 +33,8 @@ const MOCK_BRANCHES = [
     city: 'Cape Town',
     province: 'Western Cape',
     department: 'HA',
-    lat: -33.9253, lng: 18.4234,
+    lat: -33.9253,
+    lng: 18.4234,
     currentQueue: 5,
     estimatedWait: 35,
     congestionLevel: 'LOW',
@@ -49,7 +51,8 @@ const MOCK_BRANCHES = [
     city: 'Cape Town',
     province: 'Western Cape',
     department: 'HA',
-    lat: -34.0444, lng: 18.6271,
+    lat: -34.0444,
+    lng: 18.6271,
     currentQueue: 80,
     estimatedWait: 280,
     congestionLevel: 'HIGH',
@@ -66,7 +69,8 @@ const MOCK_BRANCHES = [
     city: 'Cape Town',
     province: 'Western Cape',
     department: 'SA',
-    lat: -33.8757, lng: 18.6321,
+    lat: -33.8757,
+    lng: 18.6321,
     currentQueue: 8,
     estimatedWait: 56,
     congestionLevel: 'LOW',
@@ -83,7 +87,8 @@ const MOCK_BRANCHES = [
     city: 'Cape Town',
     province: 'Western Cape',
     department: 'SR',
-    lat: -33.9329, lng: 18.5012,
+    lat: -33.9329,
+    lng: 18.5012,
     currentQueue: 3,
     estimatedWait: 21,
     congestionLevel: 'LOW',
@@ -96,21 +101,42 @@ const MOCK_BRANCHES = [
 ];
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const onlyOpen = searchParams.get('open') === 'true';
-  const dept = searchParams.get('dept');
+  try {
+    const { searchParams } = new URL(req.url);
+    const city = searchParams.get('city');
+    const department = searchParams.get('department');
+    const onlyOpen = searchParams.get('onlyOpen') === 'true';
 
-  let branches = MOCK_BRANCHES;
+    let branches = [...MOCK_BRANCHES];
 
-  if (onlyOpen) {
-    branches = branches.filter(b => b.branchStatus === 'OPEN');
-  }
+    if (city) {
+      branches = branches.filter(
+        (b) => b.city.toLowerCase() === city.toLowerCase()
+      );
+    }
 
-  if (dept) {
-    branches = branches.filter(
-      b => b.department.toUpperCase() === dept.toUpperCase()
+    if (department) {
+      branches = branches.filter(
+        (b) => b.department.toLowerCase() === department.toLowerCase()
+      );
+    }
+
+    if (onlyOpen) {
+      branches = branches.filter((b) => b.branchStatus === 'OPEN');
+    }
+
+    branches.sort((a, b) => a.name.localeCompare(b.name));
+
+    return NextResponse.json({
+      branches,
+      count: branches.length,
+      source: 'mock',
+    });
+  } catch (err) {
+    console.error('[GET /api/branches]', err);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
-
-  return NextResponse.json({ branches });
 }

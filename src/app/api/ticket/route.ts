@@ -2,7 +2,6 @@
  * POST /api/ticket
  * Mock implementation — returns a realistic ticket without hitting Firestore.
  */
-
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -36,43 +35,48 @@ const DEPT_PREFIX: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
-  let body: unknown;
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
+    const json = await req.json();
+    const parsed = BodySchema.safeParse(json);
 
-  const parsed = BodySchema.safeParse(body);
-  if (!parsed.success) {
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: 'Invalid request body',
+          details: parsed.error.flatten(),
+        },
+        { status: 400 }
+      );
+    }
+
+    const { branchId, citizenName, category, channel } = parsed.data;
+
+    const prefix = DEPT_PREFIX[branchId] ?? 'TK';
+    const num = Math.floor(Math.random() * 60) + 10;
+    const ticketNumber = `${prefix}-${String(num).padStart(3, '0')}`;
+    const ticketId = `mock_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const queuePosition = Math.floor(Math.random() * 15) + 1;
+    const estimatedWait = queuePosition * 7;
+
+    const ticket = {
+      ticketId,
+      ticketNumber,
+      branchId,
+      citizenName,
+      status: 'WAITING',
+      category,
+      channel,
+      queuePositionAtIssue: queuePosition,
+      estimatedWait,
+      issuedAt: new Date().toISOString(),
+    };
+
+    return NextResponse.json({ ticket }, { status: 201 });
+  } catch (err) {
+    console.error('[POST /api/ticket]', err);
     return NextResponse.json(
-      { error: 'Validation failed', details: parsed.error.flatten() },
-      { status: 422 }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
-
-  const { branchId, citizenName } = parsed.data;
-
-  // Generate a realistic mock ticket
-  const prefix = DEPT_PREFIX[branchId] ?? 'TK';
-  const num = Math.floor(Math.random() * 60) + 10;
-  const ticketNumber = `${prefix}-${String(num).padStart(3, '0')}`;
-  const ticketId = `mock_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const queuePosition = Math.floor(Math.random() * 15) + 1;
-  const estimatedWait = queuePosition * 7;
-
-  const ticket = {
-    ticketId,
-    ticketNumber,
-    branchId,
-    citizenName,
-    status: 'WAITING',
-    category: parsed.data.category,
-    channel: parsed.data.channel,
-    queuePositionAtIssue: queuePosition,
-    estimatedWait,
-    issuedAt: new Date().toISOString(),
-  };
-
-  return NextResponse.json({ ticket }, { status: 201 });
 }
