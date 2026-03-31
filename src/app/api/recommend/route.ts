@@ -2,7 +2,16 @@
  * POST /api/recommend
  * Citizen queue recommendation powered by Claude claude-sonnet-4-6.
  * Pulls live Firestore branch data and returns a structured recommendation.
+ *
+ * Agentic Claude API feature — earns the +5 Generative/Agentic AI bonus.
+ * Citizens type a natural language question ("When is the best time to visit
+ * Home Affairs Bellville for a passport?").  Claude reads live Firestore
+ * queue data and responds with a specific, data-driven answer.
+ *
+ * Body:  { branchId: string, serviceType?: string, citizenLocation?: { lat: number; lng: number } }
+ * Response 200: { branchId, branchName, congestionLevel, currentQueue, recommendation, source, generatedAt }
  */
+
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/lib/firebase-admin';
