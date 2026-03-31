@@ -8,6 +8,7 @@ import { Navbar } from '@/components/navbar';
 import { SplashScreen } from '@/components/splash-screen';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Bot, Sparkles } from 'lucide-react';
 
 const departments = [
   { name: 'Home Affairs', image: '/images/home affairs.jpg' },
@@ -83,6 +84,16 @@ export default function Home() {
               <Link href="/auth/signup">Create Account</Link>
             </Button>
           </div>
+
+          {/* Ask Q CTA */}
+          <Link
+            href="/consultant"
+            className="inline-flex items-center gap-2.5 rounded-full border border-primary/40 bg-primary/10 px-5 py-2.5 text-sm font-bold text-primary transition-all hover:bg-primary/20 hover:border-primary/70 hover:scale-105 shadow-sm shadow-primary/10"
+          >
+            <Bot className="h-4 w-4" />
+            Ask Q
+            <Sparkles className="h-3.5 w-3.5 opacity-70" />
+          </Link>
 
           <p className="text-xs text-foreground/35 font-body pt-1">
             Trusted by <span className="text-foreground/60 font-bold">1.2M+</span> South Africans &middot; <span className="text-foreground/60 font-bold">450</span> active branches
