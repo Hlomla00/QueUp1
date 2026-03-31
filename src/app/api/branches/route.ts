@@ -1,29 +1,46 @@
 /**
  * GET /api/branches
- *
- * Returns all active branches with their live queue state.
- * Used by: 3D visualisation (Three.js pillar heights), browse page, redirect AI.
- *
- * Query params:
- *   ?open=true   — only return OPEN branches
- *   ?dept=HOME_AFFAIRS  — filter by department
+ * Returns all branches, optionally filtered by city or department.
+ * Supports ?seed=true to populate Firestore with demo data.
  */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllBranches, getOpenBranches } from '@/lib/firestore';
+import { db, admin } from '@/lib/firebase-admin';
+import { COLLECTIONS, Branch, SEED_BRANCHES } from '@/lib/firestore-schema';
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const onlyOpen = searchParams.get('open') === 'true';
-  const dept = searchParams.get('dept');
+  try {
+    const { searchParams } = new URL(req.url);
+    const city = searchParams.get('city');
+    const department = searchParams.get('department');
+    const seed = searchParams.get('seed') === 'true';
 
-  let branches = onlyOpen ? await getOpenBranches() : await getAllBranches();
+    // ── Optional: seed Firestore with demo branches ───────────────────────────
+    if (seed) {
+      const batch = db.batch();
+      const now = admin.firestore.Timestamp.now();
+      for (const b of SEED_BRANCHES) {
+        const ref = db.collection(COLLECTIONS.BRANCHES).doc();
+        batch.set(ref, { ...b, createdAt: now, updatedAt: now });
+      }
+      await batch.commit();
+      return NextResponse.json({ seeded: SEED_BRANCHES.length });
+    }
 
-  if (dept) {
-    branches = branches.filter(
-      b => b.department.toUpperCase() === dept.toUpperCase()
-    );
+    // ── Query ─────────────────────────────────────────────────────────────────
+    let query = db.collection(COLLECTIONS.BRANCHES) as FirebaseFirestore.Query;
+
+    if (city) query = query.where('city', '==', city);
+    if (department) query = query.where('department', '==', department);
+
+    const snap = await query.orderBy('name').get();
+    const branches: Branch[] = snap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as Omit<Branch, 'id'>),
+    }));
+
+    return NextResponse.json({ branches, count: branches.length });
+  } catch (err) {
+    console.error('[GET /api/branches]', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  return NextResponse.json({ branches });
 }

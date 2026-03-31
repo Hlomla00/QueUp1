@@ -1,0 +1,16 @@
+# QueUp — ML Training Dependencies
+# Run: pip install -r ml/requirements.txt
+
+# Core ML
+scikit-learn>=1.4.0
+numpy>=1.26.0
+
+# TensorFlow (for TFLite conversion)
+# Minimum version for quantisation + concrete functions
+tensorflow>=2.14.0
+
+# Visualisation
+matplotlib>=3.8.0
+
+# Optional: faster numpy operations
+# scipy>=1.12.0

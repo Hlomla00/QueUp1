@@ -1,344 +1,301 @@
+
 "use client"
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, User, Fingerprint, Smartphone, Printer, CheckCircle2, ChevronRight, ChevronLeft, Loader2, AlertTriangle } from 'lucide-react';
+import { Globe, User, Fingerprint, Smartphone, Printer, CheckCircle2, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 
-const BRANCH_ID = 'ha-bellville';
-const BRANCH_NAME = 'Home Affairs Bellville';
-
-const SERVICE_OPTIONS = [
-  { title: 'Smart ID Card',      icon: <Fingerprint className="h-12 w-12" />, category: 'SMART_ID'          },
-  { title: 'Passport Services',  icon: <Globe className="h-12 w-12" />,       category: 'PASSPORT'          },
-  { title: 'Birth Certificate',  icon: <User className="h-12 w-12" />,        category: 'BIRTH_CERTIFICATE' },
-  { title: 'Other Inquiries',    icon: <Smartphone className="h-12 w-12" />,  category: 'OTHER'             },
+const SERVICES = [
+  { title: 'Smart ID Card',      sub: 'New / Renewal',       icon: Fingerprint },
+  { title: 'Passport Services',  sub: 'New / Renewal',       icon: Globe },
+  { title: 'Birth Certificate',  sub: 'Registration & copy', icon: User },
+  { title: 'Other Inquiries',    sub: 'General assistance',  icon: Smartphone },
 ];
 
 export default function KioskView() {
-  const [step, setStep] = useState(1);
-  const [firstName, setFirstName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [issuedTicket, setIssuedTicket] = useState<{
-    ticketNumber: string;
-    estimatedWait: number;
-    queuePosition: number;
-    issuedAt: string;
-    issuedDate: string;
-    requiredDocs: string[];
-    serviceTitle: string;
-  } | null>(null);
-  // For branch-full scenario (hlomla2 demo)
-  const [branchFullMsg, setBranchFullMsg] = useState<string | null>(null);
-  const [redirectRec, setRedirectRec] = useState<string | null>(null);
+  const [step, setStep]           = useState(1);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [issueDate, setIssueDate]   = useState('');
+  const [issueTime, setIssueTime]   = useState('');
+  const [clock, setClock]           = useState('');
 
-  const nextStep = () => setStep(prev => prev + 1);
-  const prevStep = () => setStep(prev => prev - 1);
+  useEffect(() => {
+    const tick = () => setClock(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
-  const handleServiceSelect = async (service: typeof SERVICE_OPTIONS[0]) => {
-    if (!firstName.trim()) {
-      setSubmitError('Please enter your name first.');
-      setStep(2);
-      return;
-    }
+  const next = () => setStep(s => s + 1);
+  const prev = () => setStep(s => s - 1);
 
-    setIsSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      const res = await fetch('/api/ticket', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          branchId: BRANCH_ID,
-          citizenName: firstName.trim(),
-          category: service.category,
-          channel: 'KIOSK',
-          paymentStatus: 'FREE',
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.status === 409) {
-        // Branch full — get Claude redirect recommendation
-        setBranchFullMsg(data.message);
-        const redirectRes = await fetch('/api/redirect', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            currentBranchId: BRANCH_ID,
-            serviceType: service.title,
-            citizenLocation: BRANCH_NAME,
-          }),
-        });
-        const redirectData = await redirectRes.json();
-        setRedirectRec(redirectData.recommendation || null);
-        setStep(5);
-        return;
-      }
-
-      if (!res.ok) {
-        setSubmitError('Something went wrong. Please try again or ask staff for assistance.');
-        return;
-      }
-
-      const ticket = data.ticket;
-      const docsMap: Record<string, string[]> = {
-        SMART_ID: ['Birth Certificate', 'ID Photos', 'Proof of Residence'],
-        PASSPORT: ['Old Passport', 'ID Document', 'R600 Fee'],
-        BIRTH_CERTIFICATE: ["Proof of Birth", "Parents' Identity Documents"],
-        OTHER: ['ID Document'],
-      };
-
-      setIssuedTicket({
-        ticketNumber: ticket.ticketNumber,
-        estimatedWait: ticket.estimatedWait,
-        queuePosition: ticket.queuePositionAtIssue,
-        issuedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        issuedDate: new Date().toLocaleDateString(),
-        requiredDocs: docsMap[service.category] || ['ID Document'],
-        serviceTitle: service.title,
-      });
+  const handleFinish = () => {
+    setIsPrinting(true);
+    setTimeout(() => {
+      setIsPrinting(false);
+      setIssueDate(new Date().toLocaleDateString('en-ZA'));
+      setIssueTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setStep(4);
-    } catch {
-      setSubmitError('Network error. Please ask staff for assistance.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const formatWait = (minutes: number) => {
-    if (minutes < 60) return `${minutes} min`;
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }, 2500);
   };
 
   return (
     <main className="fixed inset-0 bg-[#0A0A0A] flex flex-col overflow-hidden text-[#F5F2EE]">
-      {/* Header */}
-      <div className="h-24 px-12 border-b border-white/5 flex items-center justify-between bg-card">
-        <div className="flex items-baseline space-x-1">
-          <span className="text-4xl font-headline font-extrabold">Que</span>
-          <span className="text-4xl font-headline font-extrabold text-primary">Up</span>
+
+      {/* ── Header ──────────────────────────────────────────────── */}
+      <header className="h-16 px-8 border-b border-white/8 flex items-center justify-between bg-card shrink-0">
+        <div className="flex items-baseline gap-0.5">
+          <span className="text-2xl font-headline font-extrabold">Que</span>
+          <span className="text-2xl font-headline font-extrabold text-primary">Up</span>
         </div>
         <div className="text-right">
-          <p className="text-xl font-headline font-bold">{BRANCH_NAME}</p>
-          <p className="text-sm text-primary font-bold uppercase tracking-widest">Self-Service Kiosk 01</p>
+          <p className="text-sm font-headline font-bold leading-tight">Home Affairs Bellville</p>
+          <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Self-Service Kiosk 01</p>
         </div>
-      </div>
+        <div className="text-right tabular-nums">
+          <p className="text-xl font-headline font-extrabold text-primary">{clock}</p>
+        </div>
+      </header>
 
-      {/* Main Interaction Area */}
-      <div className="flex-1 flex flex-col items-center justify-center p-12">
+      {/* ── Step progress bar ────────────────────────────────────── */}
+      {step < 4 && (
+        <div className="h-1 bg-white/5 shrink-0">
+          <motion.div
+            className="h-full bg-primary"
+            animate={{ width: `${(step / 3) * 100}%` }}
+            transition={{ duration: 0.4 }}
+          />
+        </div>
+      )}
+
+      {/* ── Main area ────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col items-center justify-center px-8 py-6 overflow-y-auto scrollbar-hide">
         <AnimatePresence mode="wait">
 
           {/* Step 1 — Welcome */}
           {step === 1 && (
             <motion.div
               key="step1"
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 1.1 }}
-              className="text-center space-y-12"
+              exit={{ opacity: 0, scale: 1.05 }}
+              transition={{ duration: 0.3 }}
+              className="text-center space-y-8 w-full max-w-lg"
             >
-              <h2 className="text-7xl font-headline font-extrabold max-w-4xl leading-tight">Welcome. Touch the screen to begin.</h2>
+              {/* Pulsing lime dot */}
+              <div className="flex justify-center">
+                <span className="relative flex h-4 w-4">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+                  <span className="relative inline-flex rounded-full h-4 w-4 bg-primary" />
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <h2 className="text-4xl font-headline font-extrabold leading-tight">
+                  Welcome.<br />
+                  <span className="text-primary">Touch to begin.</span>
+                </h2>
+                <p className="text-sm text-muted-foreground">Home Affairs Bellville · Self-Service Queue</p>
+              </div>
+
               <Button
-                onClick={nextStep}
-                className="h-32 px-24 text-4xl font-headline font-extrabold rounded-3xl bg-primary text-primary-foreground hover:scale-105 transition-transform shadow-2xl shadow-primary/20"
+                onClick={next}
+                className="w-full h-16 text-xl font-headline font-extrabold rounded-2xl bg-primary text-primary-foreground hover:scale-[1.02] transition-transform shadow-lg shadow-primary/20"
               >
                 START
               </Button>
-              <div className="pt-12 flex items-center justify-center space-x-8 text-xl text-muted-foreground font-bold">
-                 <span>English</span>
-                 <span className="opacity-40">|</span>
-                 <span>isiXhosa</span>
-                 <span className="opacity-40">|</span>
-                 <span>Afrikaans</span>
+
+              <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground font-bold pt-2">
+                <span>English</span>
+                <span className="opacity-30">|</span>
+                <span>isiXhosa</span>
+                <span className="opacity-30">|</span>
+                <span>Afrikaans</span>
               </div>
             </motion.div>
           )}
 
-          {/* Step 2 — Name Entry */}
+          {/* Step 2 — Your Details */}
           {step === 2 && (
-             <motion.div
-               key="step2"
-               initial={{ opacity: 0, x: 100 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -100 }}
-               className="w-full max-w-4xl space-y-12"
-             >
-                <div className="space-y-4 text-center">
-                   <h2 className="text-5xl font-headline font-extrabold">Your Details</h2>
-                   <p className="text-2xl text-muted-foreground">Please enter your first name for the paper ticket.</p>
-                </div>
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: 60 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -60 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-lg space-y-6"
+            >
+              <div className="space-y-1">
+                <h2 className="text-2xl font-headline font-extrabold">Your Details</h2>
+                <p className="text-sm text-muted-foreground">Enter your info to receive your ticket.</p>
+              </div>
 
-                <div className="min-h-[72px]">
-                  {submitError && (
-                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-red-950/60 border border-red-800/50 text-red-400 text-xl font-bold">
-                      <AlertTriangle className="h-6 w-6 shrink-0" />
-                      {submitError}
-                    </div>
-                  )}
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-widest text-primary">First Name</label>
+                  <Input className="h-14 text-lg bg-card border-white/10 rounded-xl px-4" placeholder="e.g. Thabo" />
                 </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-widest text-primary">SA ID Number</label>
+                  <Input className="h-14 text-lg bg-card border-white/10 rounded-xl px-4" placeholder="13-digit ID" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold uppercase tracking-widest text-primary">Phone (optional)</label>
+                  <Input className="h-14 text-lg bg-card border-white/10 rounded-xl px-4" placeholder="+27 8X XXX XXXX" />
+                </div>
+              </div>
 
-                <div className="space-y-4">
-                   <label className="text-xl font-bold uppercase tracking-widest text-primary">First Name</label>
-                   <input
-                     className="w-full h-20 text-3xl bg-card border border-white/10 rounded-2xl px-6 text-white placeholder-white/30 focus:outline-none focus:border-primary"
-                     placeholder="Enter your first name"
-                     value={firstName}
-                     onChange={e => setFirstName(e.target.value)}
-                   />
+              {/* On-screen keyboard */}
+              <div className="bg-card rounded-2xl border border-white/8 p-3">
+                <div className="grid grid-cols-10 gap-1.5 mb-1.5">
+                  {['Q','W','E','R','T','Y','U','I','O','P'].map(k => (
+                    <div key={k} className="h-10 bg-white/5 rounded-lg flex items-center justify-center text-sm font-bold hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors">{k}</div>
+                  ))}
                 </div>
+                <div className="grid grid-cols-9 gap-1.5 mb-1.5 px-4">
+                  {['A','S','D','F','G','H','J','K','L'].map(k => (
+                    <div key={k} className="h-10 bg-white/5 rounded-lg flex items-center justify-center text-sm font-bold hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors">{k}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1.5 mb-1.5 px-8">
+                  {['Z','X','C','V','B','N','M'].map(k => (
+                    <div key={k} className="h-10 bg-white/5 rounded-lg flex items-center justify-center text-sm font-bold hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors">{k}</div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <div className="h-10 bg-white/5 rounded-lg flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-white/10 transition-colors">123</div>
+                  <div className="h-10 bg-white/5 rounded-lg flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-white/10 transition-colors">SPACE</div>
+                  <div className="h-10 bg-destructive/80 rounded-lg flex items-center justify-center text-xs font-bold cursor-pointer hover:bg-destructive transition-colors">⌫</div>
+                </div>
+              </div>
 
-                {/* Simulated Virtual Keyboard */}
-                <div className="bg-card p-4 rounded-3xl border border-white/10 grid grid-cols-10 gap-2">
-                   {['Q','W','E','R','T','Y','U','I','O','P','A','S','D','F','G','H','J','K','L','Z','X','C','V','B','N','M'].map(key => (
-                      <div
-                        key={key}
-                        onClick={() => setFirstName(prev => prev + key)}
-                        className="h-16 bg-white/5 rounded-xl flex items-center justify-center text-2xl font-bold hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors select-none"
-                      >{key}</div>
-                   ))}
-                   <div
-                     onClick={() => setFirstName(prev => prev.slice(0, -1))}
-                     className="col-span-5 h-16 bg-white/5 rounded-xl flex items-center justify-center text-xl font-bold cursor-pointer hover:bg-destructive/20 select-none"
-                   >DELETE</div>
-                   <div
-                     onClick={() => setFirstName(prev => prev + ' ')}
-                     className="col-span-5 h-16 bg-white/5 rounded-xl flex items-center justify-center text-xl font-bold cursor-pointer hover:bg-white/10 select-none"
-                   >SPACE</div>
-                </div>
-
-                <div className="flex justify-between items-center pt-8">
-                   <Button variant="ghost" onClick={prevStep} className="h-20 px-8 text-2xl font-bold text-muted-foreground hover:text-white">
-                      <ChevronLeft className="h-8 w-8 mr-2" /> BACK
-                   </Button>
-                   <Button
-                     onClick={nextStep}
-                     disabled={!firstName.trim()}
-                     className="h-20 px-16 text-3xl font-bold rounded-2xl bg-primary text-primary-foreground disabled:opacity-50"
-                   >
-                      NEXT <ChevronRight className="h-8 w-8 ml-2" />
-                   </Button>
-                </div>
-             </motion.div>
+              <div className="flex justify-between items-center">
+                <Button variant="ghost" onClick={prev} className="h-12 px-5 text-base font-bold text-muted-foreground hover:text-white">
+                  <ChevronLeft className="h-5 w-5 mr-1" /> Back
+                </Button>
+                <Button onClick={next} className="h-12 px-10 text-base font-bold rounded-xl bg-primary text-primary-foreground">
+                  Next <ChevronRight className="h-5 w-5 ml-1" />
+                </Button>
+              </div>
+            </motion.div>
           )}
 
-          {/* Step 3 — Service Selection */}
+          {/* Step 3 — Select Service */}
           {step === 3 && (
             <motion.div
-               key="step3"
-               initial={{ opacity: 0, x: 100 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -100 }}
-               className="w-full max-w-5xl space-y-12"
+              key="step3"
+              initial={{ opacity: 0, x: 60 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -60 }}
+              transition={{ duration: 0.3 }}
+              className="w-full max-w-lg space-y-6"
             >
-               <h2 className="text-5xl font-headline font-extrabold text-center">Select Service</h2>
-               <div className="grid grid-cols-2 gap-6">
-                  {SERVICE_OPTIONS.map(service => (
-                    <Card
-                      key={service.title}
-                      onClick={() => !isSubmitting && handleServiceSelect(service)}
-                      className={`p-12 cursor-pointer hover:bg-primary/5 hover:border-primary transition-all flex flex-col items-center space-y-6 text-center border-white/5 ${isSubmitting ? 'opacity-50 pointer-events-none' : ''}`}
-                    >
-                       <div className="p-6 bg-primary/20 rounded-full text-primary">{service.icon}</div>
-                       <h3 className="text-3xl font-headline font-bold">{service.title}</h3>
-                       <p className="text-primary font-bold">Touch to Print Ticket</p>
-                    </Card>
-                  ))}
-               </div>
+              <div className="space-y-1">
+                <h2 className="text-2xl font-headline font-extrabold">Select Service</h2>
+                <p className="text-sm text-muted-foreground">Touch a service to print your ticket.</p>
+              </div>
 
-               {isSubmitting && (
-                 <div className="fixed inset-0 bg-black/90 z-50 flex flex-col items-center justify-center space-y-8">
-                    <Loader2 className="h-32 w-32 text-primary animate-spin" />
-                    <h2 className="text-5xl font-headline font-bold">Issuing your ticket...</h2>
-                    <p className="text-2xl text-muted-foreground">Please wait a moment.</p>
-                 </div>
-               )}
+              <div className="grid grid-cols-2 gap-4">
+                {SERVICES.map(({ title, sub, icon: Icon }) => (
+                  <button
+                    key={title}
+                    onClick={handleFinish}
+                    className="p-6 bg-card rounded-2xl border border-white/8 hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all text-left space-y-3 group"
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary group-hover:bg-primary/25 transition-colors">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="font-headline font-bold text-base leading-tight">{title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
+                    </div>
+                    <p className="text-xs text-primary font-bold uppercase tracking-wider">Touch to print →</p>
+                  </button>
+                ))}
+              </div>
+
+              <Button variant="ghost" onClick={prev} className="h-11 px-5 text-sm font-bold text-muted-foreground hover:text-white">
+                <ChevronLeft className="h-4 w-4 mr-1" /> Back
+              </Button>
+
+              {/* Printing overlay */}
+              <AnimatePresence>
+                {isPrinting && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/95 z-50 flex flex-col items-center justify-center gap-6"
+                  >
+                    <Loader2 className="h-16 w-16 text-primary animate-spin" />
+                    <h2 className="text-3xl font-headline font-bold">Printing your ticket…</h2>
+                    <p className="text-base text-muted-foreground">Please wait a moment.</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
 
           {/* Step 4 — Ticket Printed */}
-          {step === 4 && issuedTicket && (
-             <motion.div
-               key="step4"
-               initial={{ opacity: 0, scale: 0.8 }}
-               animate={{ opacity: 1, scale: 1 }}
-               className="text-center space-y-12"
-             >
-                <div className="relative inline-block">
-                   <Printer className="h-32 w-32 text-primary mx-auto" />
-                   <motion.div
-                      className="absolute -top-4 -right-4 h-12 w-12 bg-green-500 rounded-full flex items-center justify-center"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.5 }}
-                   >
-                      <CheckCircle2 className="h-8 w-8 text-white" />
-                   </motion.div>
-                </div>
-
-                <div className="space-y-4">
-                   <h2 className="text-7xl font-headline font-extrabold">Ticket Printed!</h2>
-                   <p className="text-3xl text-muted-foreground">Please collect your paper slip from the slot below.</p>
-                </div>
-
-                <Card className="max-w-md mx-auto p-12 bg-white text-black space-y-8 shadow-2xl">
-                   <div className="space-y-2">
-                      <p className="text-xl font-bold uppercase tracking-widest text-primary">Ticket Number</p>
-                      <div className="text-9xl font-headline font-extrabold leading-none">{issuedTicket.ticketNumber}</div>
-                   </div>
-                   <div className="space-y-2 text-2xl font-bold border-t border-black/10 pt-4">
-                      <p>{BRANCH_NAME}</p>
-                      <p className="text-lg font-normal text-gray-600">{issuedTicket.serviceTitle}</p>
-                   </div>
-                   <div className="space-y-2 border-t border-black/10 pt-4 text-left">
-                      <p className="text-muted-foreground text-lg">Date: {issuedTicket.issuedDate}</p>
-                      <p className="text-muted-foreground text-lg">Issue Time: {issuedTicket.issuedAt}</p>
-                      <p className="text-muted-foreground text-lg">Est. Wait: {formatWait(issuedTicket.estimatedWait)}</p>
-                      <p className="text-muted-foreground text-lg">Position: #{issuedTicket.queuePosition}</p>
-                      <div>
-                        <p className="text-sm font-bold uppercase tracking-widest text-primary">Documents Needed</p>
-                        <p className="text-sm text-muted-foreground">{issuedTicket.requiredDocs.join(', ')}</p>
-                      </div>
-                   </div>
-                </Card>
-
-                <p className="text-2xl text-muted-foreground">Returning to start automatically...</p>
-                <Button onClick={() => { setStep(1); setFirstName(''); setIssuedTicket(null); }} size="lg" className="h-20 px-12 text-2xl rounded-full bg-white/5 border border-white/10">Done</Button>
-             </motion.div>
-          )}
-
-          {/* Step 5 — Branch Full */}
-          {step === 5 && (
+          {step === 4 && (
             <motion.div
-              key="full"
+              key="step4"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-center space-y-12 max-w-3xl"
+              transition={{ duration: 0.4 }}
+              className="text-center space-y-6 w-full max-w-sm"
             >
-              <div className="bg-destructive/20 p-8 rounded-full inline-block">
-                <AlertTriangle className="h-32 w-32 text-destructive mx-auto" />
+              <div className="relative inline-block">
+                <div className="w-20 h-20 rounded-full bg-primary/15 flex items-center justify-center mx-auto">
+                  <Printer className="h-10 w-10 text-primary" />
+                </div>
+                <motion.div
+                  className="absolute -top-1 -right-1 h-7 w-7 bg-green-500 rounded-full flex items-center justify-center"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.4, type: 'spring' }}
+                >
+                  <CheckCircle2 className="h-4 w-4 text-white" />
+                </motion.div>
               </div>
-              <div className="space-y-4">
-                <h2 className="text-6xl font-headline font-extrabold">Branch Full Today</h2>
-                <p className="text-2xl text-muted-foreground">{branchFullMsg || 'This branch has reached its daily capacity.'}</p>
+
+              <div className="space-y-1">
+                <h2 className="text-3xl font-headline font-extrabold">Ticket Printed!</h2>
+                <p className="text-sm text-muted-foreground">Collect your slip from the slot below.</p>
               </div>
-              {redirectRec && (
-                <Card className="p-8 bg-card border-primary/30 text-left space-y-4">
-                  <p className="text-xl font-bold text-primary uppercase tracking-widest">QueUp AI Recommends</p>
-                  <p className="text-xl leading-relaxed">{redirectRec}</p>
-                </Card>
-              )}
-              <Button
-                onClick={() => { setStep(1); setFirstName(''); setBranchFullMsg(null); setRedirectRec(null); }}
-                className="h-20 px-16 text-3xl rounded-2xl bg-primary text-primary-foreground"
-              >
-                Return to Start
+
+              {/* Paper ticket mockup */}
+              <div className="bg-white text-black rounded-2xl p-6 shadow-2xl text-left space-y-4">
+                <div className="flex items-baseline justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Ticket Number</p>
+                    <div className="text-6xl font-headline font-extrabold leading-none mt-1">B-090</div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Est. Wait</p>
+                    <p className="text-2xl font-headline font-extrabold text-primary">1h 45m</p>
+                  </div>
+                </div>
+                <div className="border-t border-black/10 pt-3 space-y-1 text-xs text-gray-500">
+                  <p className="font-bold text-sm text-black">Home Affairs Bellville</p>
+                  <p>Date: {issueDate}</p>
+                  <p>Issued: {issueTime}</p>
+                  <p className="pt-1 font-semibold text-black/70">Bring: ID Photos · Proof of Residence</p>
+                </div>
+                <div className="flex justify-center pt-1">
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: 28 }).map((_, i) => (
+                      <div key={i} className="w-0.5 bg-black" style={{ height: i % 3 === 0 ? 20 : 14 }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground">Returning to start in 30 seconds…</p>
+              <Button onClick={() => setStep(1)} className="h-12 px-10 rounded-xl bg-primary text-primary-foreground font-bold">
+                Done
               </Button>
             </motion.div>
           )}

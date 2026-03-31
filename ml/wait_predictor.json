@@ -1,0 +1,54 @@
+{
+  "model_name": "GradientBoosting",
+  "trained_at": "2026-03-31T01:16:40Z",
+  "dataset_size": 2000,
+  "metrics": {
+    "mae_minutes": 1.8,
+    "rmse_minutes": 2.992,
+    "r2_score": 0.9973
+  },
+  "parameters": {
+    "avg_service_time_minutes": 3.59,
+    "peak_morning_multiplier": 1.208,
+    "peak_afternoon_multiplier": 1.116,
+    "busy_day_multiplier": 1.085,
+    "peak_morning_hours": [
+      9,
+      10,
+      11
+    ],
+    "peak_afternoon_hours": [
+      13,
+      14,
+      15
+    ],
+    "busy_days": [
+      0,
+      4
+    ]
+  },
+  "feature_names": [
+    "hour_of_day",
+    "day_of_week",
+    "queue_size"
+  ],
+  "target_name": "wait_minutes",
+  "tflite": {
+    "x_min": [
+      7.0,
+      0.0,
+      1.0
+    ],
+    "x_range": [
+      9.0,
+      4.0,
+      78.0
+    ],
+    "output_scale": 180.0
+  },
+  "nn_metrics": {
+    "mae_minutes": 4.336,
+    "rmse_minutes": 6.9,
+    "r2_score": 0.9859
+  }
+}
