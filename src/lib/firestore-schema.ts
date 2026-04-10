@@ -134,7 +134,22 @@ export const COLLECTIONS = {
   ANALYTICS: 'analytics',
   PREDICTIONS: 'predictions',
   NOTIFICATIONS: 'notifications',
+  USERS: 'users',
 } as const;
+
+// ─────────────────────────────────────────────
+// users
+// ─────────────────────────────────────────────
+export interface UserDoc {
+  displayName: string;
+  email: string | null;
+  role: 'citizen' | 'consultant' | 'admin';
+  department?: string;   // assigned on first consultant login
+  phone?: string;
+  idNumber?: string;     // citizens only
+  createdAt: Timestamp;
+  lastLoginAt: Timestamp;
+}
 
 // ─────────────────────────────────────────────
 // Seed data – Cape Town branches for the demo

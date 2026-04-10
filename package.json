@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test:integration": "npx tsx tests/test_integration.ts",
     "ml:train": "python ml/train_wait_predictor.py",
-    "db:seed": "curl -s \"$NEXT_PUBLIC_APP_URL/api/branches?seed=true\""
+    "db:seed": "curl -s \"$NEXT_PUBLIC_APP_URL/api/branches?seed=true\"",
+    "seed:consultants": "tsx scripts/seed-consultants.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",

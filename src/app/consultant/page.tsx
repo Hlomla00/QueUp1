@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/auth-provider';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -240,6 +241,7 @@ function TypingIndicator() {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function QDashboard() {
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -273,6 +275,13 @@ export default function QDashboard() {
   ]);
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Auth guard — redirect unauthenticated or non-consultant users
+  useEffect(() => {
+    if (!authLoading && (!user || user.role !== 'consultant')) {
+      router.replace('/auth/signin');
+    }
+  }, [user, authLoading, router]);
 
   // Live anomaly chart ticker
   useEffect(() => {
@@ -402,6 +411,17 @@ export default function QDashboard() {
 
   // ── Render ───────────────────────────────────────────────────────────────────
 
+  if (authLoading || !user || user.role !== 'consultant') {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-muted-foreground">
+          <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-sm font-bold">Verifying credentials…</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-background">
 
@@ -417,9 +437,20 @@ export default function QDashboard() {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5">
-            <Bot className="h-3.5 w-3.5 text-primary" />
-            <span className="text-[11px] font-bold uppercase tracking-widest text-primary">Q — AI Intelligence Suite</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5">
+              <Bot className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[11px] font-bold uppercase tracking-widest text-primary">Q — AI Intelligence Suite</span>
+            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-card px-4 py-1.5">
+              <span className="text-[11px] font-bold text-foreground">{user.displayName}</span>
+              {user.department && (
+                <>
+                  <span className="text-white/20">·</span>
+                  <span className="text-[11px] text-muted-foreground">{user.department}</span>
+                </>
+              )}
+            </div>
           </div>
           <h1 className="text-4xl md:text-6xl font-headline font-extrabold leading-tight">
             Five live intelligence features.
