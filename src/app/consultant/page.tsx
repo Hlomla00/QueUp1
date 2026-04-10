@@ -27,7 +27,16 @@ import {
   Zap,
   ChevronRight,
   ArrowLeft,
+  PhoneCall,
+  UserCheck,
+  XCircle,
+  RefreshCw,
 } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import {
+  collection, query, where, orderBy, onSnapshot, doc, updateDoc,
+  serverTimestamp, increment,
+} from 'firebase/firestore';
 import {
   ResponsiveContainer,
   LineChart,
@@ -43,6 +52,29 @@ import {
 import type { RoutingResponse, BranchCard } from '@/app/api/q-route/route';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
+
+type LiveTicket = {
+  ticketId: string;
+  ticketNumber: string;
+  citizenName: string;
+  status: 'WAITING' | 'CALLED' | 'SERVED' | 'NO_SHOW' | 'CANCELLED';
+  serviceLabel?: string;
+  departmentName?: string;
+  category?: string;
+  queuePositionAtIssue: number;
+  issuedAt?: { seconds: number } | null;
+};
+
+type LiveBranch = {
+  id: string;
+  name: string;
+  currentQueue: number;
+  dailyCapacity: number;
+  congestionLevel: string;
+  nowServing?: string | null;
+  estimatedWait?: number;
+  department?: string;
+};
 
 type WaitPrediction = {
   etaMinutes: number;
@@ -276,6 +308,115 @@ export default function QDashboard() {
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // ── Live queue state ──
+  const [liveQueue, setLiveQueue] = useState<LiveTicket[]>([]);
+  const [branchInfo, setBranchInfo] = useState<LiveBranch | null>(null);
+  const [callNextLoading, setCallNextLoading] = useState(false);
+  const [managedBranchId, setManagedBranchId] = useState('ha-bellville');
+
+  // Determine branch from user department
+  useEffect(() => {
+    if (!user?.department) return;
+    const map: Record<string, string> = {
+      'Home Affairs': 'ha-bellville',
+      'SASSA': 'sassa-bellville',
+      'DLTC': 'dltc-milnerton',
+      'Department of Labour': 'labour-bellville',
+      'Department of Health': 'hospital-groote',
+    };
+    setManagedBranchId(map[user.department] ?? 'ha-bellville');
+  }, [user?.department]);
+
+  // Subscribe to branch doc
+  useEffect(() => {
+    const unsub = onSnapshot(doc(db, 'branches', managedBranchId), (snap) => {
+      if (snap.exists()) setBranchInfo({ id: snap.id, ...snap.data() } as LiveBranch);
+    });
+    return () => unsub();
+  }, [managedBranchId]);
+
+  // Subscribe to live queue
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const q = query(
+      collection(db, 'queueTickets'),
+      where('branchId', '==', managedBranchId),
+      where('sessionId', '==', `${managedBranchId}_${today}`),
+      where('status', 'in', ['WAITING', 'CALLED']),
+      orderBy('queuePositionAtIssue', 'asc')
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setLiveQueue(snap.docs.map(d => ({ ticketId: d.id, ...d.data() } as LiveTicket)));
+    }, () => {
+      // Silently handle errors (e.g. missing index)
+    });
+    return () => unsub();
+  }, [managedBranchId]);
+
+  const currentlyServing = liveQueue.find(t => t.status === 'CALLED');
+  const waitingQueue = liveQueue.filter(t => t.status === 'WAITING');
+
+  const handleCallNext = async () => {
+    const next = waitingQueue[0];
+    if (!next) {
+      toast({ title: 'Queue empty', description: 'No more tickets waiting.' });
+      return;
+    }
+    setCallNextLoading(true);
+    try {
+      // Mark previous as SERVED
+      if (currentlyServing) {
+        await updateDoc(doc(db, 'queueTickets', currentlyServing.ticketId), {
+          status: 'SERVED',
+          servedAt: serverTimestamp(),
+        });
+        await updateDoc(doc(db, 'branches', managedBranchId), {
+          currentQueue: increment(-1),
+        });
+      }
+      // Call next
+      await updateDoc(doc(db, 'queueTickets', next.ticketId), {
+        status: 'CALLED',
+        calledAt: serverTimestamp(),
+      });
+      await updateDoc(doc(db, 'branches', managedBranchId), {
+        nowServing: next.ticketNumber,
+      });
+      toast({ title: `Called ${next.ticketNumber}`, description: `${next.citizenName} — please proceed to the counter.` });
+    } catch (err) {
+      console.error('callNext error', err);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not call next ticket. Check Firestore connection.' });
+    } finally {
+      setCallNextLoading(false);
+    }
+  };
+
+  const handleMarkServed = async (ticketId: string) => {
+    try {
+      await updateDoc(doc(db, 'queueTickets', ticketId), { status: 'SERVED', servedAt: serverTimestamp() });
+      await updateDoc(doc(db, 'branches', managedBranchId), {
+        currentQueue: increment(-1),
+        nowServing: null,
+      });
+      toast({ title: 'Marked served' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Error updating ticket' });
+    }
+  };
+
+  const handleNoShow = async (ticketId: string) => {
+    try {
+      await updateDoc(doc(db, 'queueTickets', ticketId), { status: 'NO_SHOW', servedAt: serverTimestamp() });
+      await updateDoc(doc(db, 'branches', managedBranchId), {
+        currentQueue: increment(-1),
+        nowServing: waitingQueue[0]?.ticketNumber ?? null,
+      });
+      toast({ title: 'Marked no-show' });
+    } catch {
+      toast({ variant: 'destructive', title: 'Error' });
+    }
+  };
+
   // Auth guard — redirect unauthenticated or non-consultant users
   useEffect(() => {
     if (!authLoading && (!user || user.role !== 'consultant')) {
@@ -464,6 +605,116 @@ export default function QDashboard() {
       </section>
 
       <section className="container mx-auto px-4 md:px-8 py-10 space-y-8">
+
+        {/* ── Live Queue Management ── */}
+        <Card className="p-6 border-primary/30 bg-card space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Live Queue</p>
+              <h2 className="text-2xl font-headline font-extrabold flex items-center gap-2">
+                <Users className="h-6 w-6 text-primary shrink-0" />
+                {branchInfo?.name ?? 'Loading branch…'}
+              </h2>
+              {branchInfo && (
+                <p className="text-xs text-muted-foreground">
+                  {branchInfo.currentQueue} in queue · {branchInfo.dailyCapacity} daily capacity ·{' '}
+                  <CongestionBadge level={branchInfo.congestionLevel} />
+                </p>
+              )}
+            </div>
+
+            {/* Branch selector */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <select
+                className="h-9 rounded-xl border border-white/10 bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                value={managedBranchId}
+                onChange={e => setManagedBranchId(e.target.value)}
+              >
+                <option value="ha-bellville">Home Affairs Bellville</option>
+                <option value="ha-cbd">Home Affairs CBD</option>
+                <option value="ha-mitchells-plain">Home Affairs Mitchells Plain</option>
+                <option value="ha-khayelitsha">Home Affairs Khayelitsha</option>
+                <option value="sassa-bellville">SASSA Bellville</option>
+                <option value="sassa-khayelitsha">SASSA Khayelitsha</option>
+                <option value="sars-pinelands">SARS Pinelands</option>
+                <option value="hospital-groote">Groote Schuur Hospital</option>
+                <option value="dltc-milnerton">DLTC Milnerton</option>
+                <option value="labour-bellville">Dept of Labour Bellville</option>
+              </select>
+              <Button
+                onClick={handleCallNext}
+                disabled={callNextLoading || waitingQueue.length === 0}
+                className="h-10 px-5 rounded-xl font-bold bg-primary text-primary-foreground shadow-lg shadow-primary/25"
+              >
+                {callNextLoading
+                  ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Calling…</>
+                  : <><PhoneCall className="h-4 w-4 mr-2" />Call Next</>}
+              </Button>
+              <Link href={`/display?branchId=${managedBranchId}`} target="_blank">
+                <Button variant="outline" className="h-10 px-4 rounded-xl border-white/10 text-xs font-bold">
+                  TV Display ↗
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Currently serving */}
+          {currentlyServing && (
+            <div className="rounded-2xl border border-primary/40 bg-primary/10 p-4 flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-4">
+                <div className="text-5xl font-headline font-extrabold text-primary">{currentlyServing.ticketNumber}</div>
+                <div>
+                  <p className="text-xs text-primary font-bold uppercase tracking-widest">Now Serving</p>
+                  <p className="font-bold">{currentlyServing.citizenName}</p>
+                  <p className="text-xs text-muted-foreground">{currentlyServing.serviceLabel ?? currentlyServing.departmentName ?? 'General Service'}</p>
+                </div>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button size="sm" className="rounded-lg bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 font-bold"
+                  onClick={() => handleMarkServed(currentlyServing.ticketId)}>
+                  <UserCheck className="h-4 w-4 mr-1" /> Served
+                </Button>
+                <Button size="sm" className="rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/25 hover:bg-orange-500/25 font-bold"
+                  onClick={() => handleNoShow(currentlyServing.ticketId)}>
+                  <XCircle className="h-4 w-4 mr-1" /> No-Show
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Waiting queue list */}
+          {waitingQueue.length > 0 ? (
+            <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{waitingQueue.length} Waiting</p>
+              {waitingQueue.map((t, i) => (
+                <div key={t.ticketId}
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all ${i === 0 ? 'border-primary/30 bg-primary/5' : 'border-white/5 bg-background'}`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`text-2xl font-headline font-extrabold ${i === 0 ? 'text-primary' : 'text-muted-foreground'}`}>{t.ticketNumber}</div>
+                    <div>
+                      <p className="font-semibold text-sm">{t.citizenName}</p>
+                      <p className="text-xs text-muted-foreground">{t.serviceLabel ?? t.departmentName ?? 'Service'}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    {i === 0 && <span className="text-[10px] font-bold bg-primary/15 text-primary px-2 py-1 rounded-full">NEXT UP</span>}
+                    <p className="text-xs text-muted-foreground mt-1">#{i + 1}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground space-y-2">
+              <CheckCircle2 className="h-8 w-8 text-green-400 mx-auto" />
+              <p className="text-sm font-bold">Queue is empty</p>
+              <p className="text-xs">All tickets have been served or no seed data loaded.</p>
+              <Button variant="outline" size="sm" className="rounded-lg mt-2 border-white/10 text-xs"
+                onClick={async () => { await fetch('/api/seed?force=true'); toast({ title: 'Seeding data…', description: 'Reload in a few seconds.' }); }}>
+                <RefreshCw className="h-3 w-3 mr-1.5" /> Re-seed Demo Data
+              </Button>
+            </div>
+          )}
+        </Card>
 
         {/* ── Row 1: Feature 1 + Feature 2 ── */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

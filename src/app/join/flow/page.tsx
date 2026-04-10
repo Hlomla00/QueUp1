@@ -7,102 +7,364 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
-  ChevronRight,
-  ChevronLeft,
-  Fingerprint,
-  Globe,
-  User,
-  Smartphone,
-  Printer,
-  CheckCircle2,
-  Share2,
-  Ticket,
-  Clock,
-  FileText,
-  Loader2,
-  AlertTriangle
+  ChevronRight, ChevronLeft, Fingerprint, Globe, User, Smartphone,
+  PrinterIcon, CheckCircle2, Share2, Clock, FileText, Loader2,
+  AlertTriangle, X, MapPin, Users, Building2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Map UI service IDs to backend ServiceCategory enum values
-const SERVICE_MAP: Record<string, string> = {
-  id: 'SMART_ID',
-  passport: 'PASSPORT',
-  birth: 'BIRTH_CERTIFICATE',
-  tax: 'TAX_QUERY',
-  sassa: 'SASSA',
-  rates: 'MUNICIPAL_RATES',
+// ─── Department / service data per branch ─────────────────────────────────────
+
+type DeptDef = {
+  id: string;
+  name: string;
+  icon: React.ElementType;
+  services: ServiceDef[];
+  category: string;
 };
 
-// Map branchName query param to Firestore branchId
-const BRANCH_ID_MAP: Record<string, string> = {
-  'Home Affairs Bellville': 'ha-bellville',
-  'Home Affairs Cape Town CBD': 'ha-cbd',
-  'Home Affairs Mitchells Plain': 'ha-mitchells-plain',
-  'SASSA Tygervalley': 'sassa-tygervalley',
-  'SARS Pinelands': 'sars-pinelands',
+type ServiceDef = {
+  id: string;
+  title: string;
+  desc: string;
+  docs: string[];
 };
+
+const DEPARTMENTS_BY_BRANCH: Record<string, DeptDef[]> = {
+  'ha-bellville': [
+    {
+      id: 'identity', name: 'Identity Documents', icon: Fingerprint, category: 'SMART_ID',
+      services: [
+        { id: 'smart-id-new', title: 'Smart ID Card (New)', desc: 'First-time Smart ID application.', docs: ['Birth Certificate', '2× ID Photos', 'No fee'] },
+        { id: 'smart-id-renew', title: 'Smart ID Card (Renewal)', desc: 'Replace lost, stolen or expired Smart ID.', docs: ['Old ID Book / Smart ID', '2× ID Photos', 'R140 fee'] },
+        { id: 'temp-id', title: 'Temporary ID Certificate', desc: 'Urgent temporary identity document.', docs: ['Proof of Identity', '2× ID Photos'] },
+      ],
+    },
+    {
+      id: 'travel', name: 'Travel Documents', icon: Globe, category: 'PASSPORT',
+      services: [
+        { id: 'passport-new', title: 'Passport (New)', desc: 'Apply for a South African passport.', docs: ['Smart ID / Green ID Book', '2× Passport Photos', 'R400 fee'] },
+        { id: 'passport-renew', title: 'Passport (Renewal)', desc: 'Renew an expiring or expired passport.', docs: ['Old Passport', '2× Passport Photos', 'R400 fee'] },
+        { id: 'emergency-travel', title: 'Emergency Travel Cert.', desc: 'Urgent one-trip travel document.', docs: ['Proof of Emergency Travel', '2× Photos'] },
+      ],
+    },
+    {
+      id: 'civil', name: 'Civil Registration', icon: User, category: 'BIRTH_CERTIFICATE',
+      services: [
+        { id: 'birth-cert', title: 'Birth Certificate', desc: 'Register a birth or get a certified copy.', docs: ["Parents' ID Documents", 'Hospital Birth Record'] },
+        { id: 'marriage-cert', title: 'Marriage Certificate', desc: 'Register a marriage or get a copy.', docs: ["Both parties' ID Documents"] },
+        { id: 'death-cert', title: 'Death Certificate', desc: 'Register a death or get a certified copy.', docs: ["Deceased's ID Document", 'Medical Certificate of Death'] },
+      ],
+    },
+  ],
+  'ha-cbd': [
+    {
+      id: 'identity', name: 'Identity Documents', icon: Fingerprint, category: 'SMART_ID',
+      services: [
+        { id: 'smart-id-new', title: 'Smart ID Card (New)', desc: 'First-time Smart ID application.', docs: ['Birth Certificate', '2× ID Photos'] },
+        { id: 'smart-id-renew', title: 'Smart ID Card (Renewal)', desc: 'Replace lost, stolen or expired Smart ID.', docs: ['Old ID / Smart ID', '2× ID Photos', 'R140 fee'] },
+      ],
+    },
+    {
+      id: 'travel', name: 'Travel Documents', icon: Globe, category: 'PASSPORT',
+      services: [
+        { id: 'passport-new', title: 'Passport (New)', desc: 'Apply for a South African passport.', docs: ['Smart ID', '2× Passport Photos', 'R400 fee'] },
+        { id: 'passport-renew', title: 'Passport (Renewal)', desc: 'Renew an expiring passport.', docs: ['Old Passport', '2× Photos', 'R400 fee'] },
+      ],
+    },
+    {
+      id: 'civil', name: 'Civil Registration', icon: User, category: 'BIRTH_CERTIFICATE',
+      services: [
+        { id: 'birth-cert', title: 'Birth Certificate', desc: 'Register a birth or get a copy.', docs: ["Parents' IDs", 'Hospital Birth Record'] },
+        { id: 'marriage-cert', title: 'Marriage Certificate', desc: 'Register a marriage.', docs: ["Both parties' IDs"] },
+      ],
+    },
+  ],
+  'ha-mitchells-plain': [
+    {
+      id: 'identity', name: 'Identity Documents', icon: Fingerprint, category: 'SMART_ID',
+      services: [
+        { id: 'smart-id-new', title: 'Smart ID Card (New)', desc: 'First-time Smart ID application.', docs: ['Birth Certificate', '2× ID Photos'] },
+        { id: 'smart-id-renew', title: 'Smart ID Card (Renewal)', desc: 'Replacement Smart ID.', docs: ['Old ID', '2× Photos', 'R140 fee'] },
+      ],
+    },
+    {
+      id: 'civil', name: 'Civil Registration', icon: User, category: 'BIRTH_CERTIFICATE',
+      services: [
+        { id: 'birth-cert', title: 'Birth Certificate', desc: 'Register a birth or get a copy.', docs: ["Parents' IDs"] },
+        { id: 'marriage-cert', title: 'Marriage Certificate', desc: 'Get a marriage certificate.', docs: ["Both parties' IDs"] },
+      ],
+    },
+  ],
+  'ha-khayelitsha': [
+    {
+      id: 'identity', name: 'Identity Documents', icon: Fingerprint, category: 'SMART_ID',
+      services: [
+        { id: 'smart-id-new', title: 'Smart ID Card (New)', desc: 'First-time Smart ID.', docs: ['Birth Certificate', '2× ID Photos'] },
+        { id: 'smart-id-renew', title: 'Smart ID Card (Renewal)', desc: 'Replacement Smart ID.', docs: ['Old ID', '2× Photos', 'R140 fee'] },
+      ],
+    },
+    {
+      id: 'travel', name: 'Travel Documents', icon: Globe, category: 'PASSPORT',
+      services: [
+        { id: 'passport-new', title: 'Passport (New)', desc: 'Apply for a passport.', docs: ['Smart ID', '2× Photos', 'R400 fee'] },
+        { id: 'passport-renew', title: 'Passport (Renewal)', desc: 'Renew your passport.', docs: ['Old Passport', '2× Photos', 'R400 fee'] },
+      ],
+    },
+  ],
+  'sassa-bellville': [
+    {
+      id: 'grants', name: 'Social Grants', icon: Users, category: 'SASSA',
+      services: [
+        { id: 'old-age', title: 'Old Age Pension', desc: 'Apply for the old age social grant.', docs: ['ID Document', 'Proof of Income', 'Bank Statement'] },
+        { id: 'disability', title: 'Disability Grant', desc: 'Apply for a disability grant.', docs: ['ID Document', 'Medical Certificate', 'Bank Statement'] },
+        { id: 'child-support', title: 'Child Support Grant', desc: 'Apply for child support.', docs: ["Child's Birth Certificate", "Caregiver's ID", 'Bank Statement'] },
+      ],
+    },
+    {
+      id: 'status', name: 'Grant Status & Updates', icon: Smartphone, category: 'SASSA',
+      services: [
+        { id: 'grant-status', title: 'Grant Status Check', desc: 'Check the status of your grant application.', docs: ['ID Document'] },
+        { id: 'bank-update', title: 'Banking Details Update', desc: 'Update your payment bank details.', docs: ['ID Document', 'New Bank Statement'] },
+      ],
+    },
+  ],
+  'sassa-khayelitsha': [
+    {
+      id: 'grants', name: 'Social Grants', icon: Users, category: 'SASSA',
+      services: [
+        { id: 'old-age', title: 'Old Age Pension', desc: 'Apply for the old age social grant.', docs: ['ID Document', 'Proof of Income'] },
+        { id: 'disability', title: 'Disability Grant', desc: 'Apply for a disability grant.', docs: ['ID Document', 'Medical Certificate'] },
+        { id: 'child-support', title: 'Child Support Grant', desc: 'Apply for child support.', docs: ["Child's Birth Certificate", "Caregiver's ID"] },
+      ],
+    },
+  ],
+  'sars-pinelands': [
+    {
+      id: 'tax-personal', name: 'Personal Tax', icon: Globe, category: 'TAX_QUERY',
+      services: [
+        { id: 'itr12', title: 'Income Tax Return (ITR12)', desc: 'Submit your annual tax return.', docs: ['IRP5 Documents', 'Bank Statements', 'ID Document'] },
+        { id: 'tax-clearance', title: 'Tax Clearance Certificate', desc: 'Get a tax clearance certificate.', docs: ['ID Document', 'Latest Tax Return'] },
+        { id: 'tax-number', title: 'Tax Number Registration', desc: 'Register for a tax number.', docs: ['ID Document', 'Proof of Address'] },
+      ],
+    },
+    {
+      id: 'tax-business', name: 'Business Tax', icon: Building2, category: 'TAX_QUERY',
+      services: [
+        { id: 'company-tax', title: 'Company Tax Return', desc: 'Submit company tax return.', docs: ['Financial Statements', 'CIPC Documents'] },
+        { id: 'vat', title: 'VAT Registration', desc: 'Register for VAT.', docs: ['Company Registration', 'Bank Details'] },
+      ],
+    },
+  ],
+  'hospital-groote': [
+    {
+      id: 'outpatients', name: 'Outpatients', icon: User, category: 'OTHER',
+      services: [
+        { id: 'general', title: 'General Consultation', desc: 'See a general practitioner.', docs: ['ID Document', 'Medical Aid Card (if applicable)', 'Referral Letter (if applicable)'] },
+        { id: 'specialist', title: 'Specialist Referral', desc: 'Referral to a specialist department.', docs: ['GP Referral Letter', 'ID Document'] },
+        { id: 'followup', title: 'Follow-up Appointment', desc: 'Return visit for ongoing treatment.', docs: ['Previous Visit Card', 'ID Document'] },
+      ],
+    },
+    {
+      id: 'pharmacy', name: 'Pharmacy', icon: Globe, category: 'OTHER',
+      services: [
+        { id: 'prescription', title: 'Prescription Collection', desc: 'Collect your chronic medication.', docs: ['ID Document', 'Script / Appointment Card'] },
+        { id: 'new-rx', title: 'New Prescription', desc: 'Fill a new prescription.', docs: ['Doctor\'s Script', 'ID Document'] },
+      ],
+    },
+  ],
+  'hospital-tyger': [
+    {
+      id: 'outpatients', name: 'Outpatients', icon: User, category: 'OTHER',
+      services: [
+        { id: 'general', title: 'General Consultation', desc: 'See a general practitioner.', docs: ['ID Document', 'Referral Letter'] },
+        { id: 'paediatrics', title: 'Paediatrics', desc: "Children's health services.", docs: ["Child's Health Card", 'ID Document'] },
+      ],
+    },
+    {
+      id: 'pharmacy', name: 'Pharmacy', icon: Globe, category: 'OTHER',
+      services: [
+        { id: 'prescription', title: 'Prescription Collection', desc: 'Collect medication.', docs: ['ID Document', 'Script'] },
+        { id: 'chronic', title: 'Chronic Medication', desc: 'Ongoing medication collection.', docs: ['Clinic Card', 'ID Document'] },
+      ],
+    },
+  ],
+  'dltc-milnerton': [
+    {
+      id: 'driving', name: 'Driving Licences', icon: Globe, category: 'MUNICIPAL_RATES',
+      services: [
+        { id: 'dl-first', title: "Driver's Licence (First)", desc: 'First-time driver\'s licence application.', docs: ['Learner\'s Licence', 'ID Document', '2× Photos', 'R300 fee'] },
+        { id: 'dl-renew', title: "Driver's Licence (Renewal)", desc: 'Renew your driving licence.', docs: ['Current Driver\'s Licence', 'ID Document', '2× Photos', 'Eye Test'] },
+        { id: 'learners', title: "Learner's Licence Test", desc: "Book and write your learner's test.", docs: ['ID Document', '2× Photos', 'R135 fee'] },
+      ],
+    },
+    {
+      id: 'vehicle', name: 'Vehicle Registration', icon: Smartphone, category: 'MUNICIPAL_RATES',
+      services: [
+        { id: 'new-reg', title: 'New Vehicle Registration', desc: 'Register a new or imported vehicle.', docs: ['Title Deed / Invoice', 'ID Document', 'Roadworthy Certificate'] },
+        { id: 'ownership', title: 'Change of Ownership', desc: 'Transfer vehicle ownership.', docs: ['Original Title Deed', 'Both parties\' IDs', 'R350 fee'] },
+        { id: 'disc', title: 'Licence Disc Renewal', desc: 'Renew your motor vehicle licence.', docs: ['Current Disc', 'ID Document'] },
+      ],
+    },
+  ],
+  'dltc-parow': [
+    {
+      id: 'driving', name: 'Driving Licences', icon: Globe, category: 'MUNICIPAL_RATES',
+      services: [
+        { id: 'dl-first', title: "Driver's Licence (First)", desc: 'First-time application.', docs: ['Learner\'s Licence', 'ID Document', '2× Photos'] },
+        { id: 'dl-renew', title: "Driver's Licence (Renewal)", desc: 'Renew your driving licence.', docs: ['Current Licence', 'ID Document', '2× Photos'] },
+        { id: 'learners', title: "Learner's Licence Test", desc: "Write your learner's test.", docs: ['ID Document', '2× Photos', 'R135 fee'] },
+      ],
+    },
+    {
+      id: 'vehicle', name: 'Vehicle Registration', icon: Smartphone, category: 'MUNICIPAL_RATES',
+      services: [
+        { id: 'new-reg', title: 'New Vehicle Registration', desc: 'Register a vehicle.', docs: ['Title Deed', 'ID Document'] },
+        { id: 'ownership', title: 'Change of Ownership', desc: 'Transfer vehicle.', docs: ['Both parties\' IDs'] },
+      ],
+    },
+  ],
+  'magistrate-cbd': [
+    {
+      id: 'civil', name: 'Civil Matters', icon: Building2, category: 'OTHER',
+      services: [
+        { id: 'small-claims', title: 'Small Claims (under R20 000)', desc: 'File a small claims matter.', docs: ['ID Document', 'Written Description of Claim', 'Supporting Documents'] },
+        { id: 'maintenance', title: 'Maintenance Orders', desc: 'Apply for or modify a maintenance order.', docs: ['ID Document', 'Birth Certificate (if for child)'] },
+        { id: 'interdict', title: 'Interdict Application', desc: 'Apply for a court interdict.', docs: ['ID Document', 'Affidavit'] },
+      ],
+    },
+    {
+      id: 'admin', name: 'Administration', icon: Smartphone, category: 'OTHER',
+      services: [
+        { id: 'status', title: 'Case Status Enquiry', desc: 'Check the status of your case.', docs: ['Case Reference Number', 'ID Document'] },
+        { id: 'fine', title: 'Fine Payment', desc: 'Pay a traffic or court fine.', docs: ['Fine Notice', 'ID Document'] },
+      ],
+    },
+  ],
+  'municipality-cbd': [
+    {
+      id: 'rates', name: 'Rates & Taxes', icon: Building2, category: 'MUNICIPAL_RATES',
+      services: [
+        { id: 'rates-enquiry', title: 'Rates Account Enquiry', desc: 'Enquire about your municipal rates account.', docs: ['ID Document', 'Property Address'] },
+        { id: 'rebate', title: 'Rates Rebate Application', desc: 'Apply for a rates rebate.', docs: ['ID Document', 'Proof of Ownership', 'Income Statement'] },
+        { id: 'payment-arrangement', title: 'Payment Arrangement', desc: 'Arrange to pay outstanding rates.', docs: ['ID Document', 'Latest Statement'] },
+      ],
+    },
+    {
+      id: 'utilities', name: 'Water & Electricity', icon: Globe, category: 'MUNICIPAL_RATES',
+      services: [
+        { id: 'new-connection', title: 'New Connection', desc: 'Apply for water or electricity connection.', docs: ['Proof of Ownership', 'ID Document'] },
+        { id: 'meter-dispute', title: 'Meter Reading Dispute', desc: 'Dispute an incorrect meter reading.', docs: ['ID Document', 'Account Number', 'Own Meter Reading'] },
+        { id: 'account-query', title: 'Account Query', desc: 'Query your utility account.', docs: ['ID Document', 'Account Number'] },
+      ],
+    },
+    {
+      id: 'permits', name: 'Licences & Permits', icon: Smartphone, category: 'MUNICIPAL_RATES',
+      services: [
+        { id: 'business-licence', title: 'Business Licence', desc: 'Apply for or renew a business licence.', docs: ['ID Document', 'Proof of Business Address', 'R450 fee'] },
+        { id: 'building-plans', title: 'Building Plans', desc: 'Submit or collect building plan approval.', docs: ['Architectural Plans', 'Property Title', 'Application Fee'] },
+      ],
+    },
+  ],
+  'labour-bellville': [
+    {
+      id: 'uif', name: 'UIF Claims', icon: Users, category: 'OTHER',
+      services: [
+        { id: 'unemployment', title: 'Unemployment Benefits', desc: 'Claim UIF after losing your job.', docs: ['ID Document', 'UI-19 Form from Employer', 'Last 6 Months Payslips'] },
+        { id: 'maternity', title: 'Maternity Benefits', desc: 'Claim UIF maternity benefits.', docs: ['ID Document', 'Birth Certificate', 'UI-2.7 Form'] },
+        { id: 'illness', title: 'Illness Benefits', desc: 'Claim UIF while ill.', docs: ['ID Document', 'Medical Certificate', 'UI-2.2 Form'] },
+      ],
+    },
+    {
+      id: 'employment', name: 'Employment Services', icon: Globe, category: 'OTHER',
+      services: [
+        { id: 'job-reg', title: 'Job Registration', desc: 'Register as a jobseeker.', docs: ['ID Document', 'Qualifications', 'CV'] },
+        { id: 'learnership', title: 'Learnership Application', desc: 'Apply for a learnership or internship.', docs: ['ID Document', 'Matric Certificate'] },
+      ],
+    },
+    {
+      id: 'compliance', name: 'Labour Compliance', icon: Building2, category: 'OTHER',
+      services: [
+        { id: 'complaint', title: 'Complaint Against Employer', desc: 'Lodge a labour complaint.', docs: ['ID Document', 'Proof of Employment', 'Written Complaint'] },
+        { id: 'mediation', title: 'Mediation Request', desc: 'Request mediation for a labour dispute.', docs: ['ID Document', 'Documentation of Dispute'] },
+      ],
+    },
+  ],
+};
+
+// Fallback departments for branches not in the map
+const DEFAULT_DEPARTMENTS: DeptDef[] = [
+  {
+    id: 'general', name: 'General Services', icon: User, category: 'OTHER',
+    services: [
+      { id: 'enquiry', title: 'General Enquiry', desc: 'General information and assistance.', docs: ['ID Document'] },
+      { id: 'documents', title: 'Document Submission', desc: 'Submit official documents.', docs: ['ID Document', 'Relevant Documents'] },
+    ],
+  },
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const PROVINCE_LABEL = 'Western Cape';
+
+function formatWait(minutes: number) {
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+type Crumb = { label: string };
+function Breadcrumb({ crumbs }: { crumbs: Crumb[] }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-wrap mb-6">
+      {crumbs.map((c, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <ChevronRight className="h-3 w-3 opacity-40 shrink-0" />}
+          <span className={i === crumbs.length - 1 ? 'text-primary font-bold' : ''}>{c.label}</span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+// ─── Main flow ────────────────────────────────────────────────────────────────
+
+type FlowStep = 'department' | 'service' | 'details' | 'joining' | 'success' | 'full';
 
 function JoinFlowContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const source = searchParams?.get('source');
-  const branchName = searchParams?.get('branch') || 'Home Affairs Bellville';
-  const branchId = searchParams?.get('branchId') || BRANCH_ID_MAP[branchName] || 'ha-bellville';
-  const preselectedService = searchParams?.get('service') || 'id';
 
-  const initialStep = source === 'signup' ? 3 : 1;
-  const [step, setStep] = useState(initialStep);
-  const [method, setMethod] = useState<'kiosk' | 'qr'>(source === 'signup' ? 'qr' : 'qr');
+  const branchName = searchParams?.get('branch') ?? 'Home Affairs Bellville';
+  const branchId = searchParams?.get('branchId') ?? 'ha-bellville';
+
+  const departments = DEPARTMENTS_BY_BRANCH[branchId] ?? DEFAULT_DEPARTMENTS;
+
+  const [step, setStep] = useState<FlowStep>('department');
+  const [deptId, setDeptId] = useState('');
+  const [serviceId, setServiceId] = useState('');
   const [details, setDetails] = useState({ name: '', phone: '' });
-  const [category, setCategory] = useState(preselectedService);
-
-  // Real ticket data returned from the backend
-  const [issuedTicket, setIssuedTicket] = useState<{
-    ticketId: string;
-    ticketNumber: string;
-    estimatedWait: number;
-    queuePosition: number;
-    issuedAt: string;
-  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  // For queue-full redirect
-  const [redirectRecommendation, setRedirectRecommendation] = useState<string | null>(null);
+  const [redirectRec, setRedirectRec] = useState<string | null>(null);
+  const [issuedTicket, setIssuedTicket] = useState<{
+    ticketId: string; ticketNumber: string; estimatedWait: number;
+    queuePositionAtIssue: number; issuedAt: string; branchName: string;
+  } | null>(null);
 
-  const services = [
-    {
-      id: 'id',
-      title: 'Smart ID Card',
-      icon: <Fingerprint />,
-      desc: 'Application for first-time or replacement cards.',
-      docs: ["Birth Certificate", "ID Photos", "R140 Fee (if replacement)"]
-    },
-    {
-      id: 'passport',
-      title: 'Passport Services',
-      icon: <Globe />,
-      desc: 'Renewals and new passport applications.',
-      docs: ["Old Passport", "ID Document", "R600 Fee"]
-    },
-    {
-      id: 'birth',
-      title: 'Birth Certificate',
-      icon: <User />,
-      desc: 'Registration and unabridged certificates.',
-      docs: ["Proof of Birth", "Parents' Identity Documents"]
-    },
-  ];
+  const dept = departments.find(d => d.id === deptId);
+  const svc = dept?.services.find(s => s.id === serviceId);
 
-  const handleFinish = async () => {
-    if (source === 'signup') {
-      const paymentParams = new URLSearchParams({ source: 'signup', branch: branchName, service: category });
-      router.push(`/payment?${paymentParams.toString()}`);
-      return;
-    }
+  const crumbs = (): Crumb[] => {
+    const c: Crumb[] = [{ label: PROVINCE_LABEL }, { label: branchName }];
+    if (dept) c.push({ label: dept.name });
+    if (svc) c.push({ label: svc.title });
+    return c;
+  };
 
+  const handleJoin = async () => {
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -112,9 +374,12 @@ function JoinFlowContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           branchId,
-          citizenName: details.name,
+          citizenName: details.name.trim(),
           citizenPhone: details.phone || undefined,
-          category: SERVICE_MAP[category] || 'OTHER',
+          category: dept?.category ?? 'OTHER',
+          serviceLabel: svc?.title ?? serviceId,
+          departmentId: deptId,
+          departmentName: dept?.name,
           channel: 'QR',
           paymentStatus: 'FREE',
         }),
@@ -123,19 +388,18 @@ function JoinFlowContent() {
       const data = await res.json();
 
       if (res.status === 409) {
-        // Branch is full — fetch Claude redirect recommendation
         const redirectRes = await fetch('/api/redirect', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             currentBranchId: branchId,
-            serviceType: services.find(s => s.id === category)?.title || category,
+            serviceType: svc?.title ?? serviceId,
             citizenLocation: branchName,
           }),
         });
         const redirectData = await redirectRes.json();
-        setRedirectRecommendation(redirectData.recommendation || data.message);
-        setStep(5); // branch-full step
+        setRedirectRec(redirectData.recommendation ?? data.message);
+        setStep('full');
         return;
       }
 
@@ -144,15 +408,16 @@ function JoinFlowContent() {
         return;
       }
 
-      const ticket = data.ticket;
+      const t = data.ticket;
       setIssuedTicket({
-        ticketId: ticket.ticketId,
-        ticketNumber: ticket.ticketNumber,
-        estimatedWait: ticket.estimatedWait,
-        queuePosition: ticket.queuePositionAtIssue,
+        ticketId: t.ticketId,
+        ticketNumber: t.ticketNumber,
+        estimatedWait: t.estimatedWait,
+        queuePositionAtIssue: t.queuePositionAtIssue,
         issuedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        branchName: t.branchName ?? branchName,
       });
-      setStep(4);
+      setStep('success');
     } catch {
       setSubmitError('Network error. Please check your connection and try again.');
     } finally {
@@ -160,345 +425,233 @@ function JoinFlowContent() {
     }
   };
 
-  const formatWait = (minutes: number) => {
-    if (minutes < 60) return `${minutes}m`;
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  };
-
   return (
     <div className="container mx-auto px-4 max-w-2xl">
       <AnimatePresence mode="wait">
-        {step === 1 && (
-          <motion.div
-            key="step1"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <div className="space-y-2">
-              <h1 className="text-4xl font-headline font-extrabold text-foreground">Entry Method</h1>
-              <p className="text-muted-foreground">How would you like to receive your ticket?</p>
+
+        {/* STEP 1 — Department */}
+        {step === 'department' && (
+          <motion.div key="dept" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+            <Breadcrumb crumbs={[{ label: PROVINCE_LABEL }, { label: branchName }]} />
+            <div className="space-y-1">
+              <h1 className="text-3xl font-headline font-extrabold">Select Department</h1>
+              <p className="text-muted-foreground text-sm">What do you need help with today at <strong>{branchName}</strong>?</p>
             </div>
-
-            <RadioGroup value={method} onValueChange={(v) => setMethod(v as 'kiosk' | 'qr')} className="grid gap-4">
-              <Label
-                htmlFor="qr"
-                className={`flex items-center space-x-4 p-6 rounded-2xl border transition-all cursor-pointer group ${
-                  method === 'qr' ? 'border-primary bg-primary/5' : 'border-white/5 bg-card hover:border-white/20'
-                }`}
-              >
-                <RadioGroupItem value="qr" id="qr" className="sr-only" />
-                <div className={`p-4 rounded-xl transition-colors ${
-                  method === 'qr' ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
-                }`}>
-                  <Smartphone className="h-8 w-8" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-bold text-xl">QR Scan (Digital)</p>
-                  <p className="text-sm text-muted-foreground">Receive your ticket via WhatsApp/SMS. Join remotely.</p>
-                </div>
-              </Label>
-
-              <Label
-                htmlFor="kiosk"
-                className={`flex items-center space-x-4 p-6 rounded-2xl border transition-all cursor-pointer group ${
-                  method === 'kiosk' ? 'border-primary bg-primary/5' : 'border-white/5 bg-card hover:border-white/20'
-                }`}
-              >
-                <RadioGroupItem value="kiosk" id="kiosk" className="sr-only" />
-                <div className={`p-4 rounded-xl transition-colors ${
-                  method === 'kiosk' ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
-                }`}>
-                  <Ticket className="h-8 w-8" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-bold text-xl">Kiosk (Physical)</p>
-                  <p className="text-sm text-muted-foreground">Print a paper ticket at the branch machine.</p>
-                </div>
-              </Label>
-            </RadioGroup>
-
-            <Button className="w-full h-14 rounded-full text-lg font-bold" onClick={() => setStep(2)}>
-              Next Step <ChevronRight className="ml-2 h-5 w-5" />
-            </Button>
-          </motion.div>
-        )}
-
-        {step === 2 && (
-          <motion.div
-            key="step2"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <div className="space-y-2">
-              <h1 className="text-4xl font-headline font-extrabold text-foreground">Your Details</h1>
-              <p className="text-muted-foreground">Please provide your contact information for queue updates.</p>
+            <div className="space-y-3">
+              {departments.map(d => {
+                const Icon = d.icon;
+                return (
+                  <button key={d.id} onClick={() => { setDeptId(d.id); setStep('service'); }}
+                    className="w-full p-5 bg-card rounded-2xl border border-white/5 hover:border-primary/50 hover:bg-primary/5 transition-all text-left flex items-center gap-4 group">
+                    <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center text-primary group-hover:bg-primary/25 shrink-0">
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-base">{d.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{d.services.length} services</p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                );
+              })}
             </div>
-
-            <Card className="p-8 border-white/5 bg-card space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  placeholder="e.g. Nomsa Dlamini"
-                  className="h-12 text-lg"
-                  value={details.name}
-                  onChange={(e) => setDetails({ ...details, name: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number (WhatsApp/SMS)</Label>
-                <Input
-                  id="phone"
-                  placeholder="e.g. +27 81 234 5678"
-                  className="h-12 text-lg"
-                  value={details.phone}
-                  onChange={(e) => setDetails({ ...details, phone: e.target.value })}
-                />
-              </div>
-            </Card>
-
-            <div className="flex gap-4">
-              <Button variant="outline" className="h-14 flex-1 rounded-full font-bold" onClick={() => setStep(1)}>
-                <ChevronLeft className="mr-2 h-5 w-5" /> Back
+            <div className="flex gap-3">
+              <Button variant="outline" className="h-12 rounded-full" onClick={() => router.push('/join/browse')}>
+                <ChevronLeft className="mr-2 h-4 w-4" /> Change Branch
               </Button>
-              <Button
-                className="h-14 flex-[2] rounded-full font-bold text-lg"
-                disabled={!details.name.trim()}
-                onClick={() => setStep(3)}
-              >
-                Continue <ChevronRight className="ml-2 h-5 w-5" />
+              <Button variant="ghost" className="h-12 rounded-full text-muted-foreground" onClick={() => router.push('/')}>
+                <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
             </div>
           </motion.div>
         )}
 
-        {step === 3 && (
-          <motion.div
-            key="step3"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
-          >
-            <div className="space-y-2">
-              <h1 className="text-4xl font-headline font-extrabold text-foreground">Select Service</h1>
-              <p className="text-muted-foreground">What service do you require at {branchName}?</p>
+        {/* STEP 2 — Service */}
+        {step === 'service' && dept && (
+          <motion.div key="svc" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+            <Breadcrumb crumbs={[{ label: PROVINCE_LABEL }, { label: branchName }, { label: dept.name }]} />
+            <div className="space-y-1">
+              <h1 className="text-3xl font-headline font-extrabold">Select Service</h1>
+              <p className="text-muted-foreground text-sm">{dept.name} at {branchName}</p>
             </div>
-
-            <div className="min-h-[56px]">
-              {submitError && (
-                <div className="flex items-center gap-2 p-4 rounded-xl bg-red-950/60 border border-red-800/50 text-red-400 text-sm font-medium">
-                  <AlertTriangle className="h-4 w-4 shrink-0" />
-                  {submitError}
-                </div>
-              )}
-            </div>
-
-            <RadioGroup value={category} onValueChange={setCategory} className="grid gap-4">
-              {services.map((service) => (
-                <Label
-                  key={service.id}
-                  htmlFor={service.id}
-                  className={`flex items-center space-x-4 p-6 rounded-2xl border transition-all cursor-pointer group ${
-                    category === service.id ? 'border-primary bg-primary/5' : 'border-white/5 bg-card hover:border-white/20'
-                  }`}
-                >
-                  <RadioGroupItem value={service.id} id={service.id} className="sr-only" aria-label={service.title} />
-                  <div className={`p-3 rounded-xl transition-colors ${
-                    category === service.id ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
-                  }`}>
-                    {React.cloneElement(service.icon as React.ReactElement<{ className?: string }>, { className: 'h-6 w-6' })}
+            <div className="space-y-3">
+              {dept.services.map(s => (
+                <button key={s.id} onClick={() => { setServiceId(s.id); setStep('details'); }}
+                  className="w-full p-5 bg-card rounded-2xl border border-white/5 hover:border-primary/50 hover:bg-primary/5 transition-all text-left group">
+                  <div className="flex items-center justify-between">
+                    <p className="font-bold text-base">{s.title}</p>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
                   </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-lg">{service.title}</p>
-                    <p className="text-sm text-muted-foreground">{service.desc}</p>
-                  </div>
-                </Label>
-              ))}
-            </RadioGroup>
-
-            <div className="flex gap-4">
-              <Button variant="outline" className="h-14 flex-1 rounded-full font-bold" onClick={() => {
-                if (source === 'signup') {
-                   router.push('/join/browse?source=signup');
-                } else {
-                   setStep(2);
-                }
-              }}>
-                <ChevronLeft className="mr-2 h-5 w-5" /> Back
-              </Button>
-              <Button
-                className="h-14 flex-[2] rounded-full font-bold text-lg"
-                disabled={isSubmitting}
-                onClick={handleFinish}
-              >
-                {isSubmitting ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Joining Queue...</>
-                ) : source === 'signup' ? (
-                  'Proceed to Payment (R65)'
-                ) : (
-                  'Join Queue (Free)'
-                )}
-              </Button>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Step 4 — Success */}
-        {step === 4 && issuedTicket && (
-          <motion.div
-            key="success"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center space-y-8"
-          >
-            <div className="relative inline-block">
-              {method === 'qr' ? (
-                <div className="bg-primary/20 p-6 rounded-full">
-                  <CheckCircle2 className="h-20 w-20 text-primary mx-auto" />
-                </div>
-              ) : (
-                <div className="bg-primary/20 p-6 rounded-full">
-                  <Printer className="h-20 w-20 text-primary mx-auto" />
-                </div>
-              )}
-              <motion.div
-                className="absolute inset-0 bg-primary/10 rounded-full blur-2xl"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <h1 className="text-4xl font-headline font-extrabold text-foreground">
-                {method === 'qr' ? 'Digital Ticket Issued!' : 'Collect Paper Ticket'}
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                {method === 'qr'
-                  ? details.phone ? `Sent to ${details.phone} via WhatsApp.` : 'Your ticket is confirmed.'
-                  : `Please take your slip from the machine at ${branchName}.`}
-              </p>
-            </div>
-
-            <Card className="p-8 bg-card border-primary/20 space-y-6 max-w-sm mx-auto shadow-2xl relative overflow-hidden text-left">
-              <div className="absolute top-4 right-4 text-[10px] font-bold bg-primary text-primary-foreground px-2 py-1 rounded">
-                {method === 'qr' ? 'DIGITAL' : 'PHYSICAL'}
-              </div>
-
-              <div className="space-y-1">
-                 <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Ticket Number</p>
-                 <div className="text-7xl font-headline font-extrabold text-foreground">{issuedTicket.ticketNumber}</div>
-              </div>
-
-              <div className="text-sm space-y-4 border-t border-white/5 pt-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
-                      <Clock className="h-3 w-3 mr-1" /> Issued
-                    </p>
-                    <p className="font-bold">{issuedTicket.issuedAt}</p>
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
-                      <Clock className="h-3 w-3 mr-1" /> Est. Wait
-                    </p>
-                    <p className="font-bold text-primary">{formatWait(issuedTicket.estimatedWait)}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground">Service Details</p>
-                  <p className="text-xs"><strong>Branch:</strong> {branchName}</p>
-                  <p className="text-xs"><strong>Position:</strong> #{issuedTicket.queuePosition} in queue</p>
-                  <p className="text-xs"><strong>Type:</strong> {services.find(s => s.id === category)?.title}</p>
-                </div>
-
-                <div className="space-y-2 bg-muted/30 p-3 rounded-lg border border-white/5">
-                  <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center">
-                    <FileText className="h-3 w-3 mr-1" /> Required Documents
-                  </p>
-                  <ul className="text-[10px] space-y-1 pl-1">
-                    {services.find(s => s.id === category)?.docs.map((doc, i) => (
-                      <li key={i} className="flex items-start">
-                        <span className="text-primary mr-1.5">•</span>
-                        <span className="text-foreground/80">{doc}</span>
-                      </li>
+                  <p className="text-xs text-muted-foreground mt-1">{s.desc}</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {s.docs.slice(0, 3).map((doc, i) => (
+                      <span key={i} className="text-[10px] bg-primary/10 text-primary rounded-full px-2 py-0.5 font-medium">{doc}</span>
                     ))}
-                  </ul>
-                </div>
-              </div>
-            </Card>
-
-            <div className="flex flex-col gap-4">
-              <Button
-                onClick={() => router.push(`/queue/${issuedTicket.ticketId}`)}
-                className="h-14 w-full rounded-full bg-primary text-primary-foreground font-bold text-lg shadow-lg shadow-primary/20"
-              >
-                Track Live Position
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="h-12 rounded-full" onClick={() => setStep('department')}>
+                <ChevronLeft className="mr-2 h-4 w-4" /> Back
               </Button>
-              {method === 'kiosk' && (
-                <Button variant="outline" className="h-12 w-full rounded-full border-white/10">
-                  <Printer className="mr-2 h-4 w-4" /> Print Ticket
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                className="h-12 w-full rounded-full text-muted-foreground"
-                onClick={() => router.push('/')}
-              >
-                Return to Home
+              <Button variant="ghost" className="h-12 rounded-full text-muted-foreground" onClick={() => router.push('/')}>
+                <X className="mr-2 h-4 w-4" /> Cancel
               </Button>
             </div>
           </motion.div>
         )}
 
-        {/* Step 5 — Branch Full + Claude Redirect */}
-        {step === 5 && (
-          <motion.div
-            key="full"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="text-center space-y-8"
-          >
-            <div className="bg-destructive/20 p-6 rounded-full inline-block">
-              <AlertTriangle className="h-20 w-20 text-destructive mx-auto" />
+        {/* STEP 3 — Details */}
+        {step === 'details' && dept && svc && (
+          <motion.div key="details" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+            <Breadcrumb crumbs={crumbs()} />
+            <div className="space-y-1">
+              <h1 className="text-3xl font-headline font-extrabold">Your Details</h1>
+              <p className="text-muted-foreground text-sm">We'll use these for queue updates.</p>
             </div>
 
-            <div className="space-y-2">
-              <h1 className="text-4xl font-headline font-extrabold text-foreground">Branch Full</h1>
-              <p className="text-lg text-muted-foreground">
-                {branchName} has reached its daily capacity.
-              </p>
-            </div>
-
-            {redirectRecommendation && (
-              <Card className="p-6 bg-card border-primary/30 text-left space-y-3">
-                <p className="text-xs font-bold uppercase tracking-widest text-primary">QueUp AI Recommendation</p>
-                <p className="text-sm leading-relaxed">{redirectRecommendation}</p>
-              </Card>
+            {submitError && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-950/60 border border-red-800/50 text-red-400 text-sm">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                {submitError}
+              </div>
             )}
 
-            <Button
-              className="h-14 w-full rounded-full font-bold text-lg"
-              onClick={() => router.push('/join/browse')}
-            >
-              Find Nearby Branch
-            </Button>
-            <Button
-              variant="ghost"
-              className="h-12 w-full rounded-full text-muted-foreground"
-              onClick={() => router.push('/')}
-            >
-              Return to Home
+            {/* Required docs reminder */}
+            <Card className="p-4 bg-primary/5 border-primary/20">
+              <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2 flex items-center gap-1">
+                <FileText className="h-3.5 w-3.5" /> Documents needed for {svc.title}
+              </p>
+              <ul className="space-y-1">
+                {svc.docs.map((doc, i) => (
+                  <li key={i} className="text-xs flex items-start gap-1.5">
+                    <span className="text-primary mt-0.5">•</span>
+                    <span className="text-foreground/80">{doc}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+
+            <Card className="p-6 border-white/5 bg-card space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name *</Label>
+                <Input id="name" placeholder="e.g. Nomsa Dlamini" className="h-12 text-base"
+                  value={details.name} onChange={e => setDetails({ ...details, name: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone (WhatsApp/SMS — optional)</Label>
+                <Input id="phone" placeholder="e.g. +27 81 234 5678" className="h-12 text-base"
+                  value={details.phone} onChange={e => setDetails({ ...details, phone: e.target.value })} />
+              </div>
+            </Card>
+
+            <div className="flex gap-3">
+              <Button variant="outline" className="h-14 flex-1 rounded-full font-bold" onClick={() => setStep('service')}>
+                <ChevronLeft className="mr-2 h-5 w-5" /> Back
+              </Button>
+              <Button className="h-14 flex-[2] rounded-full font-bold text-base"
+                disabled={!details.name.trim() || isSubmitting}
+                onClick={handleJoin}>
+                {isSubmitting
+                  ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Joining Queue…</>
+                  : <>Join Queue (Free) <ChevronRight className="ml-2 h-5 w-5" /></>}
+              </Button>
+            </div>
+            <Button variant="ghost" className="w-full h-11 text-sm text-muted-foreground rounded-full" onClick={() => router.push('/')}>
+              <X className="mr-2 h-4 w-4" /> Cancel
             </Button>
           </motion.div>
         )}
+
+        {/* STEP 4 — Success */}
+        {step === 'success' && issuedTicket && (
+          <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8">
+            <Breadcrumb crumbs={crumbs()} />
+            <div className="text-center space-y-4">
+              <div className="bg-primary/20 p-6 rounded-full inline-block relative">
+                <CheckCircle2 className="h-16 w-16 text-primary mx-auto" />
+                <motion.div className="absolute inset-0 bg-primary/10 rounded-full blur-2xl" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity }} />
+              </div>
+              <div>
+                <h1 className="text-3xl font-headline font-extrabold">You&apos;re in the queue!</h1>
+                <p className="text-muted-foreground mt-1">Ticket issued for {issuedTicket.branchName}</p>
+              </div>
+            </div>
+
+            <Card className="p-6 bg-card border-primary/20 space-y-5 relative overflow-hidden">
+              <div className="absolute top-3 right-3">
+                <span className="text-[10px] font-bold bg-primary text-primary-foreground px-2 py-1 rounded">DIGITAL</span>
+              </div>
+
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Ticket Number</p>
+                <div className="text-7xl font-headline font-extrabold">{issuedTicket.ticketNumber}</div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-sm border-t border-white/5 pt-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Issued</p>
+                  <p className="font-bold">{issuedTicket.issuedAt}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Est. Wait</p>
+                  <p className="font-bold text-primary">{formatWait(issuedTicket.estimatedWait)}</p>
+                </div>
+              </div>
+
+              <div className="space-y-1 text-sm">
+                <p className="text-[10px] font-bold uppercase text-muted-foreground">Details</p>
+                <p className="text-xs"><strong>Branch:</strong> {issuedTicket.branchName}</p>
+                <p className="text-xs"><strong>Department:</strong> {dept?.name}</p>
+                <p className="text-xs"><strong>Service:</strong> {svc?.title}</p>
+                <p className="text-xs"><strong>Position:</strong> #{issuedTicket.queuePositionAtIssue} in queue</p>
+                <p className="text-xs"><strong>Name:</strong> {details.name}</p>
+              </div>
+            </Card>
+
+            <div className="space-y-3">
+              <Button onClick={() => router.push(`/queue/${issuedTicket.ticketId}`)} className="h-14 w-full rounded-full bg-primary text-primary-foreground font-bold text-base shadow-lg shadow-primary/20">
+                Track Live Position
+              </Button>
+              <Button variant="outline" className="h-12 w-full rounded-full border-white/10"
+                onClick={() => { if (navigator.clipboard) navigator.clipboard.writeText(window.location.origin + `/queue/${issuedTicket.ticketId}`); }}>
+                <Share2 className="mr-2 h-4 w-4" /> Share Ticket Link
+              </Button>
+              <Button variant="ghost" className="h-12 w-full rounded-full text-muted-foreground" onClick={() => router.push('/')}>
+                Return Home
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* STEP — Branch Full */}
+        {step === 'full' && (
+          <motion.div key="full" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-8">
+            <div className="bg-destructive/20 p-6 rounded-full inline-block">
+              <AlertTriangle className="h-16 w-16 text-destructive mx-auto" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-headline font-extrabold">Branch Full</h1>
+              <p className="text-muted-foreground mt-2">{branchName} has reached its daily capacity.</p>
+            </div>
+            {redirectRec && (
+              <Card className="p-5 bg-card border-primary/30 text-left">
+                <p className="text-xs font-bold uppercase tracking-widest text-primary mb-2">QueUp AI Recommendation</p>
+                <p className="text-sm leading-relaxed">{redirectRec}</p>
+              </Card>
+            )}
+            <div className="space-y-3">
+              <Button className="h-14 w-full rounded-full font-bold" onClick={() => router.push('/join/browse')}>
+                <MapPin className="mr-2 h-5 w-5" /> Find Nearby Branch
+              </Button>
+              <Button variant="ghost" className="h-12 w-full rounded-full text-muted-foreground" onClick={() => router.push('/')}>
+                Return Home
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
       </AnimatePresence>
     </div>
   );
@@ -506,13 +659,13 @@ function JoinFlowContent() {
 
 export default function JoinFlow() {
   return (
-    <main className="min-h-screen bg-background pt-24 pb-12">
+    <main className="min-h-screen bg-background pt-24 pb-16">
       <Navbar />
       <Suspense fallback={
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="flex flex-col items-center space-y-4">
             <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-            <p className="text-muted-foreground font-headline font-bold">Loading queue details...</p>
+            <p className="text-muted-foreground font-headline font-bold">Loading queue details…</p>
           </div>
         </div>
       }>

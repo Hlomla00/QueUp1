@@ -10,33 +10,64 @@ import { Card } from '@/components/ui/card';
 import { Search, MapPin, Clock, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const BRANCH_DATA = [
+type BranchEntry = { id: string; name: string; area: string; wait: string; inQueue: number; congestion: 'LOW' | 'MODERATE' | 'HIGH' };
+
+const BRANCH_DATA: { category: string; branches: BranchEntry[] }[] = [
   {
-    category: "Home Affairs",
+    category: 'Home Affairs',
     branches: [
-      { id: 'ha-bellville', name: 'Home Affairs Bellville', area: 'Bellville', wait: '2.5 hrs', inQueue: 47, congestion: 'HIGH' },
-      { id: 'ha-wynberg', name: 'Home Affairs Wynberg', area: 'Wynberg', wait: '1.2 hrs', inQueue: 18, congestion: 'LOW' },
-      { id: 'ha-cbd', name: 'Home Affairs Cape Town CBD', area: 'CBD', wait: '1.8 hrs', inQueue: 31, congestion: 'MODERATE' },
-      { id: 'ha-mitchells', name: 'Home Affairs Mitchells Plain', area: 'Mitchells Plain', wait: '3.1 hrs', inQueue: 62, congestion: 'HIGH' },
-      { id: 'ha-khayelitsha', name: 'Home Affairs Khayelitsha', area: 'Khayelitsha', wait: '2.4 hrs', inQueue: 41, congestion: 'HIGH' },
-    ]
+      { id: 'ha-bellville', name: 'Home Affairs Bellville', area: 'Bellville', wait: '~1h 25m', inQueue: 23, congestion: 'MODERATE' },
+      { id: 'ha-cbd', name: 'Home Affairs Cape Town CBD', area: 'CBD', wait: '~3h', inQueue: 51, congestion: 'HIGH' },
+      { id: 'ha-mitchells-plain', name: 'Home Affairs Mitchells Plain', area: 'Mitchells Plain', wait: '~28m', inQueue: 8, congestion: 'LOW' },
+      { id: 'ha-khayelitsha', name: 'Home Affairs Khayelitsha', area: 'Khayelitsha', wait: '~2h 24m', inQueue: 41, congestion: 'HIGH' },
+    ],
   },
   {
-    category: "SASSA",
+    category: 'SASSA',
     branches: [
-      { id: 'sassa-bellville', name: 'SASSA Bellville', area: 'Bellville', wait: '45 min', inQueue: 12, congestion: 'LOW' },
-      { id: 'sassa-khayelitsha', name: 'SASSA Khayelitsha', area: 'Khayelitsha', wait: '3.5 hrs', inQueue: 88, congestion: 'HIGH' },
-      { id: 'sassa-mitchells', name: 'SASSA Mitchells Plain', area: 'Mitchells Plain', wait: '2.1 hrs', inQueue: 45, congestion: 'MODERATE' },
-    ]
+      { id: 'sassa-bellville', name: 'SASSA Bellville', area: 'Bellville', wait: '~1h 52m', inQueue: 32, congestion: 'MODERATE' },
+      { id: 'sassa-khayelitsha', name: 'SASSA Khayelitsha', area: 'Khayelitsha', wait: '~5h 8m', inQueue: 88, congestion: 'HIGH' },
+    ],
   },
   {
-    category: "Hospitals — Outpatient & Pharmacy",
+    category: 'SARS',
     branches: [
-      { id: 'hosp-groote', name: 'Groote Schuur Hospital', area: 'Observatory', wait: '4.2 hrs', inQueue: 112, congestion: 'HIGH' },
-      { id: 'hosp-tyger', name: 'Tygerberg Hospital', area: 'Parow', wait: '2.8 hrs', inQueue: 74, congestion: 'HIGH' },
-      { id: 'hosp-redcross', name: 'Red Cross Children\'s Hospital', area: 'Rondebosch', wait: '1.5 hrs', inQueue: 24, congestion: 'MODERATE' },
-    ]
-  }
+      { id: 'sars-pinelands', name: 'SARS Pinelands', area: 'Pinelands', wait: '~42m', inQueue: 12, congestion: 'LOW' },
+    ],
+  },
+  {
+    category: 'Hospitals',
+    branches: [
+      { id: 'hospital-groote', name: 'Groote Schuur Hospital', area: 'Observatory', wait: '~6h 32m', inQueue: 112, congestion: 'HIGH' },
+      { id: 'hospital-tyger', name: 'Tygerberg Hospital', area: 'Parow', wait: '~4h 19m', inQueue: 74, congestion: 'HIGH' },
+      { id: 'hospital-mitchells', name: "Mitchell's Plain Hospital", area: 'Mitchells Plain', wait: '~2h 37m', inQueue: 45, congestion: 'MODERATE' },
+    ],
+  },
+  {
+    category: 'DLTC (Driver & Vehicle Licences)',
+    branches: [
+      { id: 'dltc-milnerton', name: 'DLTC Milnerton', area: 'Milnerton', wait: '~53m', inQueue: 15, congestion: 'LOW' },
+      { id: 'dltc-parow', name: 'DLTC Parow', area: 'Parow', wait: '~1h 38m', inQueue: 28, congestion: 'MODERATE' },
+    ],
+  },
+  {
+    category: 'Cape Town Magistrate',
+    branches: [
+      { id: 'magistrate-cbd', name: 'Cape Town Magistrate Court', area: 'CBD', wait: '~1h 3m', inQueue: 18, congestion: 'LOW' },
+    ],
+  },
+  {
+    category: 'Cape Town Municipality',
+    branches: [
+      { id: 'municipality-cbd', name: 'Cape Town Municipality', area: 'CBD', wait: '~2h 10m', inQueue: 37, congestion: 'MODERATE' },
+    ],
+  },
+  {
+    category: 'Department of Labour',
+    branches: [
+      { id: 'labour-bellville', name: 'Dept of Labour Bellville', area: 'Bellville', wait: '~1h 42m', inQueue: 29, congestion: 'MODERATE' },
+    ],
+  },
 ];
 
 function BrowseBranchesContent() {
@@ -145,15 +176,17 @@ export default function BrowseBranches() {
   );
 }
 
-function BranchCard({ branch, source }: { branch: any, source: string | null }) {
+function BranchCard({ branch, source }: { branch: BranchEntry, source: string | null }) {
   const congestionColor = {
     LOW: 'bg-green-500',
     MODERATE: 'bg-yellow-500',
     HIGH: 'bg-red-500'
-  }[branch.congestion as 'LOW' | 'MODERATE' | 'HIGH'];
+  }[branch.congestion];
+
+  const href = `/join/flow?branchId=${encodeURIComponent(branch.id)}&branch=${encodeURIComponent(branch.name)}${source ? `&source=${source}` : ''}`;
 
   return (
-    <Link href={source ? `/branch/${branch.id}?source=${source}` : `/branch/${branch.id}`} className="flex-shrink-0 w-72 snap-start group">
+    <Link href={href} className="flex-shrink-0 w-72 snap-start group">
       <Card className="h-full bg-card border-white/5 overflow-hidden group-hover:scale-[1.03] transition-all duration-300 relative">
         <div className="absolute top-0 left-0 right-0 h-1 bg-primary transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
         
