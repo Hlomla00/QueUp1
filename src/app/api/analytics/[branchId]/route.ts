@@ -9,10 +9,10 @@ import { COLLECTIONS, AnalyticsRecord, Branch } from '@/lib/firestore-schema';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { branchId: string } }
+  { params }: { params: Promise<{ branchId: string }> }
 ) {
   try {
-    const { branchId } = params;
+    const { branchId } = await params;
     const { searchParams } = new URL(req.url);
     const days = Math.min(parseInt(searchParams.get('days') ?? '7'), 30);
 

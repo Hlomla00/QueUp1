@@ -15,6 +15,8 @@
  * Or:  npx ts-node tests/test_integration.ts
  */
 
+export {};
+
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:9002';
 
 // ── Minimal test runner ───────────────────────────────────────────────────────
@@ -148,7 +150,7 @@ await test('Test 3 — Full branch returns 409, Claude redirect provides alterna
 
   assert(status === 409, `Expected 409 for full branch, got ${status}`);
   assert(data.error === 'BRANCH_FULL', `Expected BRANCH_FULL error, got ${data.error}`);
-  console.log(`      409 confirmed for: ${fullBranch.name}`);
+  console.log(`      409 confirmed for: ${fullBranch!.name}`);
 
   // Now call /api/redirect
   const { status: rStatus, data: rData } = await apiPost('/api/redirect', {

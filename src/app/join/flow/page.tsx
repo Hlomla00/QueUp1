@@ -313,7 +313,7 @@ function JoinFlowContent() {
                   <div className={`p-3 rounded-xl transition-colors ${
                     category === service.id ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
                   }`}>
-                    {React.cloneElement(service.icon as React.ReactElement, { className: 'h-6 w-6' })}
+                    {React.cloneElement(service.icon as React.ReactElement<{ className?: string }>, { className: 'h-6 w-6' })}
                   </div>
                   <div className="flex-1">
                     <p className="font-bold text-lg">{service.title}</p>

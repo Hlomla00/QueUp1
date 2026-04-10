@@ -64,8 +64,8 @@ export function computeQueueIntelligence(
   const hour = now.getHours();
   const dow  = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0=Mon…4=Fri
 
-  const isPeakMorning   = ML_PARAMS.peakMorningHours.includes(hour);
-  const isPeakAfternoon = ML_PARAMS.peakAfternoonHours.includes(hour);
+  const isPeakMorning   = ML_PARAMS.peakMorningHours.includes(hour as 9 | 10 | 11);
+  const isPeakAfternoon = ML_PARAMS.peakAfternoonHours.includes(hour as 13 | 14 | 15);
   const isBusyDay       = (ML_PARAMS.busyDays as readonly number[]).includes(dow);
 
   const timeMultiplier = isPeakMorning

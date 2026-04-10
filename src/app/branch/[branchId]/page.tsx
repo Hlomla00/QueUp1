@@ -353,7 +353,7 @@ function StatCard({ label, value, sub, status }: { label: string, value: string,
     LOW: 'text-green-500',
     MODERATE: 'text-yellow-500',
     HIGH: 'text-red-500'
-  }[status as any] || 'text-foreground';
+  }[status as 'LOW' | 'MODERATE' | 'HIGH'] || 'text-foreground';
 
   return (
     <Card className="p-6 bg-card border-white/5 space-y-1">
