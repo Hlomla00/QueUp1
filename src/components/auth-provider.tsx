@@ -114,10 +114,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string): Promise<UserProfile> => {
+    // Throws Firebase Auth errors for bad credentials (wrong password, no account, etc.)
     const { user: fbUser } = await signInWithEmailAndPassword(auth, email, password);
-    const profile = await loadOrCreateUserProfile(fbUser);
-    setUser(profile);
-    return profile;
+
+    // Auth succeeded — load Firestore profile separately so a rules/network
+    // failure is never misreported as a credential error.
+    try {
+      const profile = await loadOrCreateUserProfile(fbUser);
+      setUser(profile);
+      return profile;
+    } catch (err) {
+      // Sign out so we don't leave the user in a half-authenticated state
+      await firebaseSignOut(auth).catch(() => {});
+      console.error('[AuthProvider] signIn: profile load failed after successful auth:', err);
+      throw Object.assign(new Error('Profile load failed'), { code: 'auth/profile-load-failed' });
+    }
   };
 
   const signOut = async () => {

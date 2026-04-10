@@ -15,12 +15,13 @@ import { ShieldCheck, AlertCircle } from 'lucide-react';
 function getAuthErrorMessage(err: unknown): string {
   const code = (err as { code?: string }).code;
   switch (code) {
-    case 'auth/invalid-email':       return 'Invalid email address.';
-    case 'auth/user-not-found':      return 'No account found with this email.';
-    case 'auth/wrong-password':      return 'Incorrect password.';
-    case 'auth/invalid-credential':  return 'Invalid email or password.';
-    case 'auth/too-many-requests':   return 'Too many attempts. Please try again later.';
-    default:                         return 'Sign in failed. Please check your credentials.';
+    case 'auth/invalid-email':        return 'Invalid email address.';
+    case 'auth/user-not-found':       return 'No account found with this email.';
+    case 'auth/wrong-password':       return 'Incorrect password.';
+    case 'auth/invalid-credential':   return 'Invalid email or password.';
+    case 'auth/too-many-requests':    return 'Too many attempts. Please try again later.';
+    case 'auth/profile-load-failed':  return 'Credentials verified, but your profile could not be loaded. Firestore security rules may need updating — check the console.';
+    default:                          return `Sign in failed (${code ?? 'unknown'}). Please try again.`;
   }
 }
 
