@@ -290,7 +290,7 @@ function BranchDetailContent() {
                     <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground">Weekly Heatmap</h4>
                     <div className="grid grid-cols-6 gap-2">
                       <div className="h-10"></div>
-                      {['M','T','W','T','F'].map(d => <div key={d} className="flex items-center justify-center text-xs font-bold">{d}</div>)}
+                      {['M','T','W','Th','F'].map(d => <div key={d} className="flex items-center justify-center text-xs font-bold">{d}</div>)}
                       {['08','10','12','14'].map((h, hIdx) => (
                         <React.Fragment key={h}>
                           <div className="flex items-center text-[10px] text-muted-foreground font-bold">{h}:00</div>
