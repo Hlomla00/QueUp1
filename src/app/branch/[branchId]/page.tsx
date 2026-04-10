@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from '@/components/ui/badge';
-import { Clock, Users, AlertCircle, Info, ChevronRight, MapPin } from 'lucide-react';
+import { Clock, Users, AlertCircle, Info, ChevronRight, MapPin, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import {
   ChartContainer,
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/chart";
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
+import { aiPoweredQueueRecommendation, AIPoweredQueueRecommendationOutput } from '@/ai/flows/ai-powered-queue-recommendation';
 
 const mockHistoricalData = [
   { time: '07:00', size: 5, avg: 10 },
@@ -102,6 +103,9 @@ function BranchDetailContent() {
   const [activeTab, setActiveTab] = useState('live');
   const [currentTime, setCurrentTime] = useState('');
   const [heatmapData, setHeatmapData] = useState<string[][]>([]);
+  const [recommendation, setRecommendation] = useState<AIPoweredQueueRecommendationOutput | null>(null);
+  const [recLoading, setRecLoading] = useState(false);
+  const [recError, setRecError] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentTime(new Date().toLocaleTimeString());
@@ -133,6 +137,57 @@ function BranchDetailContent() {
       flowParams.set('source', source);
     }
     router.push(`/join/flow?${flowParams.toString()}`);
+  };
+
+  const fetchAIRecommendation = async () => {
+    setRecLoading(true);
+    setRecError(null);
+    try {
+      // 1. Fetch historical queue data for this branch
+      let historicalData: { dayOfWeek: string; hour: number; avgQueueSize: number }[] = [];
+      const analyticsRes = await fetch(`/api/analytics/${branchId}`).catch(() => null);
+      if (analyticsRes?.ok) {
+        const data = await analyticsRes.json();
+        historicalData = data.historicalData ?? [];
+      }
+
+      // 2. Fetch open branches in the same department (same ID prefix)
+      const prefix = branchId.split('-')[0];
+      let nearbyBranches: Array<{
+        branchId: string; name: string; currentQueueSize: number;
+        estimatedWaitMinutes: number; congestionLevel: 'LOW' | 'MODERATE' | 'HIGH';
+      }> = [];
+      const branchesRes = await fetch(`/api/branches?onlyOpen=true`).catch(() => null);
+      if (branchesRes?.ok) {
+        const data = await branchesRes.json();
+        nearbyBranches = (data.branches ?? [])
+          .filter((b: { id: string }) => b.id !== branchId && b.id.startsWith(`${prefix}-`))
+          .slice(0, 3)
+          .map((b: { id: string; name: string; currentQueue: number; estimatedWait: number; congestionLevel: string }) => ({
+            branchId: b.id,
+            name: b.name,
+            currentQueueSize: b.currentQueue,
+            estimatedWaitMinutes: b.estimatedWait,
+            congestionLevel: b.congestionLevel as 'LOW' | 'MODERATE' | 'HIGH',
+          }));
+      }
+
+      // 3. Call the AI recommendation server action
+      const result = await aiPoweredQueueRecommendation({
+        branchId,
+        branchName,
+        currentQueueSize: 47,
+        estimatedWaitMinutes: 150,
+        congestionLevel: 'HIGH',
+        historicalData,
+        nearbyBranches,
+      });
+      setRecommendation(result);
+    } catch {
+      setRecError('Could not load recommendation. Please try again.');
+    } finally {
+      setRecLoading(false);
+    }
   };
 
   const handleScheduleReminder = () => {
@@ -273,17 +328,66 @@ function BranchDetailContent() {
                 <div className="space-y-6">
                   <Card className="p-8 border-primary/50 bg-primary/5 space-y-4">
                     <div className="flex items-start space-x-4">
-                      <div className="p-3 bg-primary rounded-xl">
-                        <AlertCircle className="h-6 w-6 text-primary-foreground" />
+                      <div className="p-3 bg-primary rounded-xl flex-shrink-0">
+                        <Sparkles className="h-6 w-6 text-primary-foreground" />
                       </div>
-                      <div className="space-y-1">
-                        <h3 className="text-xl font-headline font-bold">Smart Recommendation</h3>
-                        <p className="text-foreground/80">Historically, <strong>Wednesday afternoons (14:00–15:00)</strong> are the quietest at this branch. We recommend visiting then to minimize wait time.</p>
+                      <div className="space-y-2 flex-1 min-w-0">
+                        <h3 className="text-xl font-headline font-bold">AI Recommendation</h3>
+                        {recLoading ? (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+                            <span className="text-sm">Analysing queue patterns…</span>
+                          </div>
+                        ) : recommendation ? (
+                          <div className="space-y-3">
+                            <p className="text-foreground/80 text-sm leading-relaxed">{recommendation.recommendationSummary}</p>
+                            {recommendation.bestTimeToVisit && (
+                              <div className="p-3 bg-background rounded-xl border border-white/5">
+                                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Best time to visit</p>
+                                <p className="text-sm font-bold">{recommendation.bestTimeToVisit}</p>
+                              </div>
+                            )}
+                            {recommendation.alternativeBranches && recommendation.alternativeBranches.length > 0 && (
+                              <div className="space-y-2">
+                                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Alternative Branches</p>
+                                {recommendation.alternativeBranches.map(b => (
+                                  <div key={b.branchId} className="p-3 bg-background rounded-xl border border-white/5 space-y-1">
+                                    <p className="text-sm font-bold truncate">{b.name}</p>
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                      <span className="flex items-center gap-1"><Users className="h-3 w-3" />{b.currentQueueSize} people</span>
+                                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{b.estimatedWaitMinutes} min</span>
+                                      <Badge variant="outline" className={
+                                        b.congestionLevel === 'LOW' ? 'border-green-500 text-green-500' :
+                                        b.congestionLevel === 'MODERATE' ? 'border-yellow-500 text-yellow-500' :
+                                        'border-red-500 text-red-500'
+                                      }>{b.congestionLevel}</Badge>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : recError ? (
+                          <p className="text-sm text-red-400">{recError}</p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Get a personalised recommendation based on live queue data and historical patterns for this branch.</p>
+                        )}
                       </div>
                     </div>
-                    <Button className="w-full rounded-full bg-primary text-primary-foreground font-bold h-12" onClick={handleScheduleReminder}>
-                      Schedule Reminder
-                    </Button>
+                    {recommendation ? (
+                      <div className="flex gap-3">
+                        <Button className="flex-1 rounded-full bg-primary text-primary-foreground font-bold h-12" onClick={handleScheduleReminder}>
+                          Schedule Reminder
+                        </Button>
+                        <Button variant="outline" className="rounded-full border-primary text-primary hover:bg-primary/10 h-12 px-4" onClick={fetchAIRecommendation} disabled={recLoading}>
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button className="w-full rounded-full bg-primary text-primary-foreground font-bold h-12" onClick={fetchAIRecommendation} disabled={recLoading}>
+                        {recLoading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Analysing…</> : 'Get AI Recommendation'}
+                      </Button>
+                    )}
                   </Card>
                   
                   <Card className="p-6 space-y-4">
