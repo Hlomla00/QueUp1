@@ -7,10 +7,10 @@
  * - AIPoweredQueueRecommendationOutput - The return type for the aiPoweredQueueRecommendation function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { anthropic, DEFAULT_MODEL } from '@/ai/genkit';
+import { z } from 'zod';
 
-const AIPoweredQueueRecommendationInputSchema = z.object({
+export const AIPoweredQueueRecommendationInputSchema = z.object({
   branchId: z.string().describe('The ID of the current branch.'),
   branchName: z.string().describe('The name of the current branch.'),
   currentQueueSize: z.number().describe('Current number of people in the queue.'),
@@ -31,38 +31,80 @@ const AIPoweredQueueRecommendationInputSchema = z.object({
 });
 export type AIPoweredQueueRecommendationInput = z.infer<typeof AIPoweredQueueRecommendationInputSchema>;
 
-const AIPoweredQueueRecommendationOutputSchema = z.object({
-  recommendationSummary: z.string().describe('A concise summary of the recommendation, indicating if it is a good time to visit or if alternatives are better.'),
-  bestTimeToVisit: z.string().optional().describe('A specific time slot or general guidance on the best time to visit the current branch, e.g., "Wednesday afternoon (14:00-16:00)" or "Later today (after 15:00)".'),
+export const AIPoweredQueueRecommendationOutputSchema = z.object({
+  recommendationSummary: z.string().describe('A concise summary of the recommendation.'),
+  bestTimeToVisit: z.string().optional().describe('A specific time slot or general guidance on the best time to visit.'),
   alternativeBranches: z.array(z.object({
-    branchId: z.string().describe('ID of the alternative branch.'),
-    name: z.string().describe('Name of the alternative branch.'),
-    currentQueueSize: z.number().describe('Current number of people in queue at the alternative branch.'),
-    estimatedWaitMinutes: z.number().describe('Current estimated wait time in minutes at the alternative branch.'),
-    congestionLevel: z.enum(['LOW', 'MODERATE', 'HIGH']).describe('Current congestion level at the alternative branch.'),
-  })).optional().describe('A list of less congested alternative branches with their current wait times.'),
+    branchId: z.string(),
+    name: z.string(),
+    currentQueueSize: z.number(),
+    estimatedWaitMinutes: z.number(),
+    congestionLevel: z.enum(['LOW', 'MODERATE', 'HIGH']),
+  })).optional().describe('A list of less congested alternative branches.'),
 });
 export type AIPoweredQueueRecommendationOutput = z.infer<typeof AIPoweredQueueRecommendationOutputSchema>;
 
-export async function aiPoweredQueueRecommendation(input: AIPoweredQueueRecommendationInput): Promise<AIPoweredQueueRecommendationOutput> {
-  return aiPoweredQueueRecommendationFlow(input);
+export async function aiPoweredQueueRecommendation(
+  input: AIPoweredQueueRecommendationInput
+): Promise<AIPoweredQueueRecommendationOutput> {
+  const historicalSummary = input.historicalData
+    .map(h => `  ${h.dayOfWeek} at ${h.hour}:00 — avg ${h.avgQueueSize} people`)
+    .join('\n');
+
+  const nearbySummary = input.nearbyBranches.length > 0
+    ? input.nearbyBranches
+        .map(b => `  ${b.name} (ID: ${b.branchId}): ${b.currentQueueSize} people, ${b.estimatedWaitMinutes} min wait, ${b.congestionLevel} congestion`)
+        .join('\n')
+    : '  No nearby branches provided.';
+
+  const prompt = `You are an expert queue management advisor for South African government services. Your goal is to help citizens minimize their waiting time by providing smart recommendations based on real-time and historical queue data.
+
+Current Branch Status:
+Branch ID: ${input.branchId}
+Branch Name: ${input.branchName}
+Current Queue Size: ${input.currentQueueSize} people
+Estimated Wait Time: ${input.estimatedWaitMinutes} minutes
+Congestion Level: ${input.congestionLevel}
+
+Historical Queue Data for ${input.branchName} (average queue size):
+${historicalSummary}
+
+Nearby Alternative Branches (current status):
+${nearbySummary}
+
+Based on the provided data:
+1. Analyze the current congestion at ${input.branchName}.
+2. If current congestion is HIGH or MODERATE, suggest a better time to visit using the historical data. Focus on periods with significantly lower average queue sizes.
+3. If suitable alternative branches are available with significantly lower congestion, suggest them. Prioritize branches with LOW congestion.
+4. If ${input.branchName} has LOW congestion, confirm it's a good time to visit.
+
+Respond with ONLY a valid JSON object matching this exact structure (no markdown, no explanation):
+{
+  "recommendationSummary": "string — concise summary of whether now is a good time to visit",
+  "bestTimeToVisit": "string — optional, only include if congestion is HIGH or MODERATE",
+  "alternativeBranches": [
+    {
+      "branchId": "string",
+      "name": "string",
+      "currentQueueSize": number,
+      "estimatedWaitMinutes": number,
+      "congestionLevel": "LOW" | "MODERATE" | "HIGH"
+    }
+  ]
 }
+Omit "bestTimeToVisit" and "alternativeBranches" keys entirely if not applicable.`;
 
-const prompt = ai.definePrompt({
-  name: 'aiPoweredQueueRecommendationPrompt',
-  input: {schema: AIPoweredQueueRecommendationInputSchema},
-  output: {schema: AIPoweredQueueRecommendationOutputSchema},
-  prompt: `You are an expert queue management advisor for South African government services. Your goal is to help citizens minimize their waiting time by providing smart recommendations based on real-time and historical queue data.\n\nCurrent Branch Status:\nBranch ID: {{{branchId}}}\nBranch Name: {{{branchName}}}\nCurrent Queue Size: {{{currentQueueSize}}} people\nEstimated Wait Time: {{{estimatedWaitMinutes}}} minutes\nCongestion Level: {{{congestionLevel}}}\n\nHistorical Queue Data for {{{branchName}}} (average queue size):\n{{#each historicalData}}\n  Day: {{{dayOfWeek}}}, Hour: {{{hour}}}: {{{avgQueueSize}}} people\n{{/each}}\n\nNearby Alternative Branches (current status):\n{{#if nearbyBranches}}\n  {{#each nearbyBranches}}\n    Branch ID: {{{branchId}}}, Name: {{{name}}}, Queue: {{{currentQueueSize}}} people, Wait: {{{estimatedWaitMinutes}}} minutes, Congestion: {{{congestionLevel}}}\n  {{/each}}\n{{else}}\n  No nearby branches provided.\n{{/if}}\n\nBased on the provided data, provide a recommendation to the user.\n1.  Analyze the current congestion at {{{branchName}}}.\n2.  If current congestion is high or moderate, suggest a better time to visit {{{branchName}}} using the historical data. Focus on periods with significantly lower average queue sizes.\n3.  If suitable alternative branches are available with significantly lower congestion levels, suggest them to the user. Prioritize branches with LOW congestion.\n4.  If {{{branchName}}} has low congestion, confirm it's a good time to visit.\n\nProvide your output in the exact JSON format as described by the output schema, including 'recommendationSummary', 'bestTimeToVisit' (if applicable), and 'alternativeBranches' (if applicable).\n`,
-});
+  const message = await anthropic.messages.create({
+    model: DEFAULT_MODEL,
+    max_tokens: 1024,
+    messages: [{ role: 'user', content: prompt }],
+  });
 
-const aiPoweredQueueRecommendationFlow = ai.defineFlow(
-  {
-    name: 'aiPoweredQueueRecommendationFlow',
-    inputSchema: AIPoweredQueueRecommendationInputSchema,
-    outputSchema: AIPoweredQueueRecommendationOutputSchema,
-  },
-  async (input) => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);
+  const text = message.content
+    .filter(block => block.type === 'text')
+    .map(block => block.text)
+    .join('');
+
+  const parsed = JSON.parse(text);
+  return AIPoweredQueueRecommendationOutputSchema.parse(parsed);
+}
